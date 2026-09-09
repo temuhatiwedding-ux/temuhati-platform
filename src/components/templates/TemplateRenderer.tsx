@@ -1,9 +1,14 @@
 import Rustic01 from './rustic-01'
+import Modern02 from './modern-02'
+import Elegan01 from './elegan-01'
 import { InvitationData } from '@/types/invitation'
 
 // Registry: Daftarkan semua template baru di sini nantinya
 const TEMPLATE_REGISTRY: Record<string, React.FC<{ data: InvitationData }>> = {
     'rustic-01': Rustic01,
+    'modern-02': Modern02,
+    'elegan-01': Elegan01,
+
 }
 
 export default function TemplateRenderer({ data }: { data: InvitationData }) {

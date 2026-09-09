@@ -1,12 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react' // Tambah useRef
+import { Volume2, VolumeX } from 'lucide-react' // Tambah ikon
 import { InvitationData } from '@/types/invitation'
+import GuestbookForm from '@/components/templates/GuestbookForm'
 
 export default function Rustic01({ data }: { data: InvitationData }) {
     const [isOpened, setIsOpened] = useState(false)
-    const content = data.content_data || { sections: { gallery: { enabled: true } } }
 
+
+
+    const content = data.content_data || { sections: { gallery: { enabled: true } } }
+    const audioRef = useRef<HTMLAudioElement>(null)
+    const [isPlaying, setIsPlaying] = useState(true) // Set true karena akan autoplay
+
+    const handleOpen = () => {
+        setIsOpened(true)
+    }
+
+    const toggleMusic = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause()
+            } else {
+                audioRef.current.play()
+            }
+        }
+    }
     // Fallback dummy data untuk mode dev/preview
     const bride = content.bride_details || { fullName: 'Nama Lengkap Wanita', order: 'Putri Pertama', parents: 'Bapak A & Ibu B', ig: '#' }
     const groom = content.groom_details || { fullName: 'Nama Lengkap Pria', order: 'Putra Pertama', parents: 'Bapak X & Ibu Y', ig: '#' }
@@ -27,7 +47,7 @@ export default function Rustic01({ data }: { data: InvitationData }) {
                     <h1 className="text-5xl font-serif text-stone-900 drop-shadow-md mb-2">{data.bride_name}</h1>
                     <span className="text-3xl font-serif text-stone-800 my-2">&</span>
                     <h1 className="text-5xl font-serif text-stone-900 drop-shadow-md mb-8">{data.groom_name}</h1>
-                    <button onClick={() => setIsOpened(true)} className="px-6 py-3 bg-stone-800 text-white rounded-full font-semibold shadow-lg hover:bg-stone-900 animate-bounce">
+                    <button onClick={handleOpen} className="px-6 py-3 bg-stone-800 text-white rounded-full font-semibold shadow-lg hover:bg-stone-900 animate-bounce">
                         Buka Undangan
                     </button>
                 </div>
@@ -39,7 +59,24 @@ export default function Rustic01({ data }: { data: InvitationData }) {
     return (
         <div className="w-full bg-stone-50 text-stone-800">
             {content.musicUrl && (
-                <audio autoPlay loop className="hidden"><source src={content.musicUrl} type="audio/mpeg" /></audio>
+                <>
+                    <audio
+                        ref={audioRef}
+                        autoPlay
+                        loop
+                        className="hidden"
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                    >
+                        <source src={content.musicUrl} type="audio/mpeg" />
+                    </audio>
+                    <button
+                        onClick={toggleMusic}
+                        className="fixed bottom-6 right-6 z-50 p-3 bg-stone-800 text-white rounded-full shadow-2xl hover:bg-stone-900 transition-all flex items-center justify-center animate-pulse"
+                    >
+                        {isPlaying ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                    </button>
+                </>
             )}
 
             {/* Page Utama & Save the Date */}
@@ -91,16 +128,38 @@ export default function Rustic01({ data }: { data: InvitationData }) {
                     <a href={events.resepsi?.mapUrl} target="_blank" rel="noreferrer" className="text-xs bg-stone-100 text-stone-900 px-4 py-2 rounded">Buka Maps</a>
                 </div>
             </div>
-
+            {/* Love Story */}
+            {content.love_story?.enabled && content.love_story.stories.length > 0 && (
+                <div className="p-8 bg-stone-100 text-stone-800">
+                    <h2 className="text-3xl font-serif mb-6 text-center">Love Story</h2>
+                    <div className="flex flex-col gap-6 max-w-md mx-auto">
+                        {content.love_story.stories.map((s, i) => (
+                            <div key={i} className="border-l-2 border-stone-800 pl-4">
+                                <h4 className="font-bold text-lg">{s.year}</h4>
+                                <p className="text-sm">{s.text}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             {/* Galeri */}
             {content.sections?.gallery?.enabled && (
                 <div className="p-8 bg-white text-center">
                     <h2 className="text-2xl font-serif mb-4">Galeri Kami</h2>
-                    <div className="grid grid-cols-2 gap-2">
-                        {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="w-full h-32 bg-stone-200 rounded"></div>
-                        ))}
-                    </div>
+
+                    {content.sections.gallery.photos && content.sections.gallery.photos.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            {content.sections.gallery.photos.map((photo, i) => (
+                                <img key={i} src={photo} alt={`Gallery ${i}`} className="w-full h-32 object-cover rounded shadow-sm" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="w-full h-32 bg-stone-200 rounded flex items-center justify-center text-xs text-stone-400">Belum ada foto</div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -126,6 +185,10 @@ export default function Rustic01({ data }: { data: InvitationData }) {
                         ))}
                     </div>
                 )}
+            </div>
+
+            <div className="py-12 px-6 bg-stone-50">
+                <GuestbookForm invitationId={data.invitation_id || ''} />
             </div>
 
             {/* Penutup */}

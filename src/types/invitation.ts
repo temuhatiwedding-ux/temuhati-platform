@@ -1,9 +1,11 @@
 export interface InvitationData {
+    invitation_id?: string;
     template_id: string;
     bride_name: string;
     groom_name: string;
     content_data: {
         coverPhoto?: string;
+        bgPhoto?: string;
         musicUrl?: string;
         quote?: string;
         bride_details?: { fullName: string; order: string; parents: string; ig: string };
@@ -18,5 +20,6 @@ export interface InvitationData {
         sections: {
             gallery: { enabled: boolean; photos?: string[] };
         };
+        love_story?: { enabled: boolean; stories: { year: string; text: string }[] };
     };
 }

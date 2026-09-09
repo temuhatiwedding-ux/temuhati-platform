@@ -15,26 +15,27 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const file = formData.get('file') as File;
-        const folder = formData.get('folder') as string || 'general'; // Pisahkan folder foto/musik
+        const folder = formData.get('folder') as string || 'general';
 
         if (!file) {
             return NextResponse.json({ error: 'File tidak ditemukan' }, { status: 400 });
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        // Buat nama file unik: folder/timestamp-namafile.ext
-        const uniqueFilename = `${folder}/${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+
+        // HAPUS Date.now(). Gunakan nama asli dari frontend (contoh: cover-1234.webp)
+        const filename = `${folder}/${file.name.replace(/\s+/g, '-')}`;
 
         const command = new PutObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME,
-            Key: uniqueFilename,
+            Key: filename,
             Body: buffer,
             ContentType: file.type,
         });
 
         await s3Client.send(command);
 
-        const publicUrl = `${process.env.NEXT_PUBLIC_R2_URL}/${uniqueFilename}`;
+        const publicUrl = `${process.env.NEXT_PUBLIC_R2_URL}/${filename}`;
 
         return NextResponse.json({ url: publicUrl, success: true });
     } catch (error) {
