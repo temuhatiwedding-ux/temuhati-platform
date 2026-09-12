@@ -5,8 +5,10 @@ import { createClient } from '@/utils/supabase/client'
 import TemplateRenderer from '@/components/templates/TemplateRenderer'
 import imageCompression from 'browser-image-compression'
 import { Toaster, toast } from 'react-hot-toast'
+import ImageCropper from '@/components/dashboard/ImageCropper'
 import { Image as ImageIcon, Music, Heart, CalendarDays, Gift, Video, Type, CheckCircle, UploadCloud, X, ChevronUp, Save, Menu, MessageSquare, Send, Copy, ExternalLink, } from 'lucide-react'
-
+import CommentsTab from '@/components/dashboard/CommentsTab'
+import ShareTab from '@/components/dashboard/ShareTab'
 import Sidebar from '@/components/dashboard/Sidebar'
 
 
@@ -20,7 +22,7 @@ const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: 
 const PRESET_MUSIC = [
     { label: '-- Pilih Lagu Bawaan --', value: '' },
     { label: 'Upload Lagu Sendiri', value: 'custom' },
-    { label: 'A Thousand Years - Christina Perri', value: 'https://temuhatiinvite.com/master-music/tiara-andini.mp3' }, // Nanti ganti dengan URL lagu lu di R2
+    { label: 'Laksana Surgaku', value: 'https://temuhatiinvite.com/master-music/laksana-surgaku.mp3' }, // Nanti ganti dengan URL lagu lu di R2
 
 ]
 
@@ -28,7 +30,7 @@ const PRESET_MUSIC = [
 export default function DashboardClient({ user, initialData }: { user: any, initialData?: any }) {
     const [formData, setFormData] = useState({
 
-        template_id: initialData?.template_id || 'rustic-01',
+        template_id: initialData?.template_id || '',
 
         brideName: initialData?.bride_name || '',
         groomName: initialData?.groom_name || '',
@@ -43,13 +45,42 @@ export default function DashboardClient({ user, initialData }: { user: any, init
             resepsi: { date: '', time: '', location: '', mapUrl: '' }
         },
         gift: initialData?.content_data?.gift || { enabled: true, banks: [{ name: '', account: '', holder: '' }] },
-        love_story: initialData?.content_data?.love_story || { enabled: true, stories: [{ year: '2020', text: 'Pertama kali bertemu' }] },
+        love_story: initialData?.content_data?.love_story || { enabled: true, stories: [{ year: '', text: '' }] },
         live_stream: initialData?.content_data?.live_stream || { enabled: false, url: '' },
         closing_text: initialData?.content_data?.closing_text || '',
+        closingPhoto: initialData?.content_data?.closingPhoto || '',
         sections: initialData?.content_data?.sections || { gallery: { enabled: true, photos: [] } }
 
 
     })
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                template_id: initialData.template_id || 'rustic-01',
+                brideName: initialData.bride_name || '',
+                groomName: initialData.groom_name || '',
+                coverPhoto: initialData.content_data?.coverPhoto || '',
+                bgPhoto: initialData.content_data?.bgPhoto || '',
+                musicUrl: initialData.content_data?.musicUrl || '',
+                quote: initialData.content_data?.quote || '',
+                bride_details: initialData.content_data?.bride_details || { fullName: '', order: '', parents: '', ig: '' },
+                groom_details: initialData.content_data?.groom_details || { fullName: '', order: '', parents: '', ig: '' },
+                events: initialData.content_data?.events || {
+                    akad: { date: '', time: '', location: '', mapUrl: '' },
+                    resepsi: { date: '', time: '', location: '', mapUrl: '' }
+                },
+                gift: initialData.content_data?.gift || { enabled: true, banks: [{ name: '', account: '', holder: '' }] },
+                love_story: initialData.content_data?.love_story || { enabled: true, stories: [{ year: '2020', text: 'Pertama kali bertemu' }] },
+                live_stream: initialData.content_data?.live_stream || { enabled: false, url: '' },
+                closing_text: initialData.content_data?.closing_text || '',
+                closingPhoto: initialData.content_data?.closingPhoto || '',
+                sections: initialData.content_data?.sections || { gallery: { enabled: true, photos: [] } }
+            })
+        }
+    }, [initialData])
+
+    const [cropConfig, setCropConfig] = useState<{ src: string, field: string, aspect: number, index?: number } | null>(null)
     const activeConfig = TEMPLATE_CONFIG[formData.template_id] || TEMPLATE_CONFIG['rustic-01']
     const [saveStatus, setSaveStatus] = useState('Tersimpan')
     const [invitationSlug, setInvitationSlug] = useState('')
@@ -79,30 +110,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         }))
     }
 
-    const handleUpload = async (file: File, folder: string, type: 'photo' | 'music') => {
-        const isPhoto = type === 'photo'
-        isPhoto ? setIsUploadingPhoto(true) : setIsUploadingMusic(true)
 
-        const data = new FormData()
-        data.append('file', file)
-        data.append('folder', folder)
-
-        try {
-            const res = await fetch('/api/upload', { method: 'POST', body: data })
-            const result = await res.json()
-
-            if (result.success) {
-                if (isPhoto) setFormData(prev => ({ ...prev, coverPhoto: result.url }))
-                else setFormData(prev => ({ ...prev, musicUrl: result.url }))
-            } else {
-                alert(result.error)
-            }
-        } catch (error) {
-            alert('Upload gagal')
-        } finally {
-            isPhoto ? setIsUploadingPhoto(false) : setIsUploadingMusic(false)
-        }
-    }
 
     const handlePublish = async () => {
         await supabase.from('invitations').update({ status: 'PUBLISHED' }).eq('slug', invitationSlug)
@@ -137,6 +145,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                 content_data: {
                     coverPhoto: formData.coverPhoto,
                     bgPhoto: formData.bgPhoto,
+                    closingPhoto: formData.closingPhoto,
                     musicUrl: formData.musicUrl,
                     quote: formData.quote,
                     bride_details: formData.bride_details,
@@ -197,47 +206,81 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         })
     }
 
-    const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    // 1. Fungsi untuk mencegat gambar dan membuka modal crop
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // Deklarasikan toastId di sini, SEBELUM try
+        let aspect = 3 / 4 // Default potret (Galeri, Cover)
+        if (field === 'bgPhoto') aspect = 9 / 16 // Fullscreen background
+        if (field === 'closingPhoto') aspect = 1 / 1 // Bulat / Persegi
+
+        const reader = new FileReader()
+        reader.onload = () => {
+            setCropConfig({ src: reader.result as string, field, aspect })
+        }
+        reader.readAsDataURL(file)
+        e.target.value = '' // Reset agar bisa pilih file yang sama berulang kali
+    }
+    const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = () => {
+            // Rasio galeri diset 3:4 (sesuaikan kalau mau 1:1)
+            setCropConfig({ src: reader.result as string, field: 'gallery', aspect: 3 / 4, index })
+        }
+        reader.readAsDataURL(file)
+        e.target.value = ''
+    }
+    // 2. Fungsi untuk memproses hasil crop dan mengunggahnya
+    const handleCropSave = async (croppedBlob: Blob) => {
+        if (!cropConfig) return
+
+        const field = cropConfig.field
+        setCropConfig(null) // Tutup modal langsung
+
         const toastId = toast.loading('Mengupload gambar...')
 
         try {
-            const options = {
-                maxSizeMB: 0.5,
-                maxWidthOrHeight: 1280,
-                useWebWorker: true,
-                fileType: 'image/webp'
-            }
+            const isGallery = field === 'gallery'
+            const fileSuffix = isGallery ? `gallery-${user.id}-${cropConfig.index}` : `${field}-${user.id}`
+            const file = new File([croppedBlob], `${fileSuffix}.jpg`, { type: 'image/jpeg' })
 
+            const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true, fileType: 'image/webp' }
             const compressedFile = await imageCompression(file, options)
-            const fileName = `${field}-${user.id}.webp`
 
-            const formData = new FormData()
-            formData.append('file', compressedFile, fileName)
+            const uploadData = new FormData()
+            uploadData.append('file', compressedFile, `${fileSuffix}.webp`)
+            if (isGallery) uploadData.append('folder', 'gallery') // Tambahkan folder khusus galeri
 
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            })
-
+            const response = await fetch('/api/upload', { method: 'POST', body: uploadData })
             const data = await response.json()
 
             if (data.url) {
                 const urlWithCacheBuster = `${data.url}?t=${Date.now()}`
-                setFormData(prev => ({ ...prev, [field]: urlWithCacheBuster }))
 
-                // Panggil success dengan id
+                if (isGallery && cropConfig.index !== undefined) {
+                    setFormData(prev => {
+                        const currentPhotos = prev.sections.gallery.photos || []
+                        const newPhotos = [...currentPhotos]
+                        newPhotos[cropConfig.index as number] = urlWithCacheBuster
+                        return { ...prev, sections: { ...prev.sections, gallery: { ...prev.sections.gallery, photos: newPhotos } } }
+                    })
+                } else {
+                    setFormData(prev => ({ ...prev, [field]: urlWithCacheBuster }))
+                }
+
                 toast.success('Upload berhasil!', { id: toastId })
             }
         } catch (error) {
             console.error(error)
-            // Panggil error dengan id
             toast.error('Gagal mengupload gambar', { id: toastId })
         }
     }
+
+
     const handleUploadMusic = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -275,43 +318,6 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         }
     }
 
-    const handleUploadGallery = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-
-        // Deklarasikan toastId sebelum try
-        const toastId = toast.loading('Mengupload gambar galeri...')
-
-        try {
-            const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true, fileType: 'image/webp' }
-            const compressedFile = await imageCompression(file, options)
-
-            // Nama fix berdasarkan urutan (index) agar saling menimpa
-            const fileName = `gallery-${user.id}-${index}.webp`
-            const uploadData = new FormData()
-            uploadData.append('file', compressedFile, fileName)
-            uploadData.append('folder', 'gallery')
-
-            const response = await fetch('/api/upload', { method: 'POST', body: uploadData })
-            const data = await response.json()
-
-            if (data.url) {
-                const urlWithCacheBuster = `${data.url}?t=${Date.now()}`
-                setFormData(prev => {
-                    const currentPhotos = prev.sections.gallery.photos || []
-                    const newPhotos = [...currentPhotos]
-                    newPhotos[index] = urlWithCacheBuster
-                    return { ...prev, sections: { ...prev.sections, gallery: { ...prev.sections.gallery, photos: newPhotos } } }
-                })
-                // Panggil success dengan id
-                toast.success('Upload foto galeri berhasil!', { id: toastId })
-            }
-        } catch (error) {
-            console.error(error)
-            // Panggil error dengan id
-            toast.error('Gagal mengupload foto galeri', { id: toastId })
-        }
-    }
 
     const removeGalleryPhoto = (index: number) => {
         setFormData(prev => {
@@ -342,6 +348,31 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
         if (data) setComments(data)
         setIsLoadingComments(false)
+    }
+    const handleReplySubmit = async (commentId: string, replyText: string) => {
+        try {
+            // 1. Update kolom admin_reply di Supabase
+            const { error } = await supabase
+                .from('comments')
+                .update({ admin_reply: replyText })
+                .eq('id', commentId)
+
+            if (error) throw error
+
+            // 2. Update state lokal agar UI langsung berubah tanpa refresh
+            setComments(prevComments =>
+                prevComments.map(comment =>
+                    comment.id === commentId
+                        ? { ...comment, admin_reply: replyText }
+                        : comment
+                )
+            )
+
+            toast.success('Balasan berhasil dikirim!')
+        } catch (error) {
+            console.error('Error replying to comment:', error)
+            toast.error('Gagal mengirim balasan')
+        }
     }
 
     // Panggil otomatis saat menu komentar dibuka
@@ -389,12 +420,20 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                     {/* LAYOUT EDITOR UNDANGAN */}
                     {activeMenu === 'editor' && (
                         <div className="flex h-full relative w-full text-black">
-                            {/* AREA FORM (Kiri di Desktop, Bottom Sheet di HP) */}
+
+                            {isFormOpen && (
+                                <div
+                                    className="fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity"
+                                    onClick={() => setIsFormOpen(false)}
+                                />
+                            )}
+
+                            {/* 2. Container Form (di atas backdrop) */}
                             <div className={`
-                                fixed inset-x-0 bottom-0 z-50 w-full h-[85vh] bg-white shadow-2xl rounded-t-2xl transition-transform duration-300 ease-in-out transform flex flex-col
-                                md:relative md:inset-auto md:h-full md:w-[450px] md:translate-y-0 md:rounded-none md:border-r md:border-gray-300 md:shadow-none
-                                ${isFormOpen ? 'translate-y-0' : 'translate-y-full'}
-                            `}>
+    fixed inset-x-0 bottom-0 z-50 w-full h-[85vh] bg-white shadow-2xl rounded-t-2xl transition-transform duration-300 ease-in-out transform flex flex-col
+    md:relative md:inset-auto md:h-full md:w-[450px] md:translate-y-0 md:rounded-none md:border-r md:border-gray-300 md:shadow-none
+    ${isFormOpen ? 'translate-y-0' : 'translate-y-full'}
+}`}>
                                 {/* Header Bottom Sheet (Hanya Mobile) */}
                                 <div className="md:hidden flex justify-between items-center p-4 border-b sticky top-0 bg-white rounded-t-2xl z-10 shrink-0">
                                     <h2 className="font-bold text-lg">Editor Undangan</h2>
@@ -483,21 +522,31 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     <div className="space-y-3">
                                                         <h4 className="font-medium text-sm text-gray-800">Detail Wanita</h4>
                                                         <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Lengkap" value={formData.bride_details.fullName} onChange={(e) => updateNested('bride_details', 'fullName', e.target.value)} />
+
                                                         <div className="grid grid-cols-2 gap-3">
-                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Putri ke-..." value={formData.bride_details.order} onChange={(e) => updateNested('bride_details', 'order', e.target.value)} />
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Contoh: Pertama" value={formData.bride_details.order} onChange={(e) => updateNested('bride_details', 'order', e.target.value)} />
                                                             <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Username IG" value={formData.bride_details.ig} onChange={(e) => updateNested('bride_details', 'ig', e.target.value)} />
                                                         </div>
-                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Orang Tua" value={formData.bride_details.parents} onChange={(e) => updateNested('bride_details', 'parents', e.target.value)} />
+
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Bapak (Cth: Dedi S.Pd)" value={formData.bride_details?.fatherName || ''} onChange={(e) => updateNested('bride_details', 'fatherName', e.target.value)} />
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Ibu (Cth: Nanik S.Sos)" value={formData.bride_details?.motherName || ''} onChange={(e) => updateNested('bride_details', 'motherName', e.target.value)} />
+                                                        </div>
                                                     </div>
 
                                                     <div className="space-y-3 pt-3">
                                                         <h4 className="font-medium text-sm text-gray-800">Detail Pria</h4>
                                                         <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Lengkap" value={formData.groom_details.fullName} onChange={(e) => updateNested('groom_details', 'fullName', e.target.value)} />
+
                                                         <div className="grid grid-cols-2 gap-3">
-                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Putra ke-..." value={formData.groom_details.order} onChange={(e) => updateNested('groom_details', 'order', e.target.value)} />
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Contoh: Pertama" value={formData.groom_details.order} onChange={(e) => updateNested('groom_details', 'order', e.target.value)} />
                                                             <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Username IG" value={formData.groom_details.ig} onChange={(e) => updateNested('groom_details', 'ig', e.target.value)} />
                                                         </div>
-                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Orang Tua" value={formData.groom_details.parents} onChange={(e) => updateNested('groom_details', 'parents', e.target.value)} />
+
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Bapak (Cth: Budi S.T)" value={formData.groom_details?.fatherName || ''} onChange={(e) => updateNested('groom_details', 'fatherName', e.target.value)} />
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Nama Ibu (Cth: Wati S.E)" value={formData.groom_details?.motherName || ''} onChange={(e) => updateNested('groom_details', 'motherName', e.target.value)} />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -517,7 +566,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                             <div className="flex items-center gap-3">
                                                                 <label className="flex-1 cursor-pointer bg-white hover:bg-gray-50 border border-dashed border-gray-300 rounded-md p-2.5 text-center">
                                                                     <span className="text-xs text-gray-600">Pilih Foto</span>
-                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'coverPhoto')} />
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'coverPhoto')} />
                                                                 </label>
                                                                 {formData.coverPhoto && (
                                                                     <div className="flex flex-col items-center gap-1">
@@ -542,7 +591,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                             <div className="flex items-center gap-3">
                                                                 <label className="flex-1 cursor-pointer bg-white hover:bg-gray-50 border border-dashed border-gray-300 rounded-md p-2.5 text-center">
                                                                     <span className="text-xs text-gray-600">Pilih Background</span>
-                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadImage(e, 'bgPhoto')} />
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'bgPhoto')} />
                                                                 </label>
                                                                 {formData.bgPhoto && (
                                                                     <div className="flex flex-col items-center gap-1">
@@ -588,25 +637,43 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     <h3 className="font-semibold text-gray-800">Rangkaian Acara</h3>
                                                 </div>
                                                 <div className="space-y-6">
+
+                                                    {/* AKAD */}
                                                     <div className="space-y-3">
                                                         <h4 className="font-medium text-sm text-gray-800">Akad Nikah</h4>
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            <input type="date" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events.akad.date} onChange={(e) => updateEvent('akad', 'date', e.target.value)} />
-                                                            <input type="time" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events.akad.time} onChange={(e) => updateEvent('akad', 'time', e.target.value)} />
+
+                                                        {/* Grid 3 Kolom: Hari, Tanggal, Jam */}
+                                                        <div className="grid grid-cols-3 gap-3">
+                                                            <input type="text" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Hari (Jumat)" value={formData.events?.akad?.day || ''} onChange={(e) => updateEvent('akad', 'day', e.target.value)} />
+
+                                                            {/* Ubah jadi type="date" biar muncul kalender */}
+                                                            <input type="date" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events?.akad?.date || ''} onChange={(e) => updateEvent('akad', 'date', e.target.value)} />
+
+                                                            <input type="time" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events?.akad?.time || ''} onChange={(e) => updateEvent('akad', 'time', e.target.value)} />
                                                         </div>
-                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Lokasi (Contoh: Masjid Raya)" value={formData.events.akad.location} onChange={(e) => updateEvent('akad', 'location', e.target.value)} />
-                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Link Google Maps" value={formData.events.akad.mapUrl} onChange={(e) => updateEvent('akad', 'mapUrl', e.target.value)} />
+
+                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Lokasi (Contoh: Masjid Raya)" value={formData.events?.akad?.location || ''} onChange={(e) => updateEvent('akad', 'location', e.target.value)} />
+                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Link Google Maps" value={formData.events?.akad?.mapUrl || ''} onChange={(e) => updateEvent('akad', 'mapUrl', e.target.value)} />
                                                     </div>
 
+                                                    {/* RESEPSI */}
                                                     <div className="space-y-3 pt-3 border-t border-gray-100">
                                                         <h4 className="font-medium text-sm text-gray-800">Resepsi</h4>
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            <input type="date" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events.resepsi.date} onChange={(e) => updateEvent('resepsi', 'date', e.target.value)} />
-                                                            <input type="time" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events.resepsi.time} onChange={(e) => updateEvent('resepsi', 'time', e.target.value)} />
+
+                                                        {/* Grid 3 Kolom: Hari, Tanggal, Jam */}
+                                                        <div className="grid grid-cols-3 gap-3">
+                                                            <input type="text" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Hari (Sabtu)" value={formData.events?.resepsi?.day || ''} onChange={(e) => updateEvent('resepsi', 'day', e.target.value)} />
+
+                                                            {/* Ubah jadi type="date" biar muncul kalender */}
+                                                            <input type="date" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events?.resepsi?.date || ''} onChange={(e) => updateEvent('resepsi', 'date', e.target.value)} />
+
+                                                            <input type="time" className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" value={formData.events?.resepsi?.time || ''} onChange={(e) => updateEvent('resepsi', 'time', e.target.value)} />
                                                         </div>
-                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Lokasi (Contoh: Gedung Serbaguna)" value={formData.events.resepsi.location} onChange={(e) => updateEvent('resepsi', 'location', e.target.value)} />
-                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Link Google Maps" value={formData.events.resepsi.mapUrl} onChange={(e) => updateEvent('resepsi', 'mapUrl', e.target.value)} />
+
+                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Lokasi (Contoh: Gedung Serbaguna)" value={formData.events?.resepsi?.location || ''} onChange={(e) => updateEvent('resepsi', 'location', e.target.value)} />
+                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Link Google Maps" value={formData.events?.resepsi?.mapUrl || ''} onChange={(e) => updateEvent('resepsi', 'mapUrl', e.target.value)} />
                                                     </div>
+
                                                 </div>
                                             </div>
 
@@ -625,19 +692,32 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                 <div className={`${!formData.sections.gallery.enabled ? 'opacity-40 pointer-events-none' : ''}`}>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {(formData.sections.gallery.photos || []).map((photo: string, i: number) => (
-                                                            <div key={i} className="group relative border border-gray-200 rounded-md overflow-hidden">
+                                                            <div key={i} className="relative border border-gray-200 rounded-md overflow-hidden">
                                                                 <img src={photo} alt={`Gallery ${i}`} className="w-full h-24 object-cover" />
-                                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
-                                                                    <label className="cursor-pointer text-white text-[10px] bg-gray-800 px-2 py-1 rounded">Ganti<input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadGallery(e, i)} /></label>
-                                                                    <button type="button" onClick={() => removeGalleryPhoto(i)} className="text-white text-[10px] bg-red-600 px-2 py-1 rounded">Hapus</button>
-                                                                </div>
+
+                                                                {/* Tombol Hapus */}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeGalleryPhoto(i)}
+                                                                    className="absolute top-1.5 right-1.5 bg-red-500 text-white p-1 rounded-full shadow-md active:scale-90 transition-transform z-10"
+                                                                >
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+
+                                                                {/* Tombol Ganti */}
+                                                                <label className="absolute bottom-1.5 left-1.5 right-1.5 cursor-pointer text-white text-[10px] bg-black/60 backdrop-blur-sm py-1 rounded text-center font-medium hover:bg-black/80 active:scale-95 transition-all z-10">
+                                                                    Ganti
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleGallerySelect(e, i)} />
+                                                                </label>
                                                             </div>
                                                         ))}
                                                     </div>
+
+                                                    {/* Tombol Tambah Foto */}
                                                     {(formData.sections.gallery.photos || []).length < 10 && (
-                                                        <label className="mt-3 block cursor-pointer bg-white hover:bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 text-center text-xs text-gray-600">
+                                                        <label className="mt-3 block cursor-pointer bg-white hover:bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 text-center text-xs text-gray-600 transition-colors">
                                                             + Tambah Foto
-                                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadGallery(e, (formData.sections.gallery.photos || []).length)} />
+                                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleGallerySelect(e, (formData.sections.gallery.photos || []).length)} />
                                                         </label>
                                                     )}
                                                 </div>
@@ -672,31 +752,78 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     <CheckCircle className="w-4 h-4 text-gray-500" />
                                                     <h3 className="font-semibold text-gray-800">Lain-lain</h3>
                                                 </div>
+
                                                 <div className="space-y-6">
+
+                                                    {/* REKENING 1 */}
                                                     <div className="space-y-3">
-                                                        <h4 className="font-medium text-sm text-gray-800">Rekening Hadiah</h4>
+                                                        <h4 className="font-medium text-sm text-gray-800">Rekening 1</h4>
                                                         <div className="grid grid-cols-2 gap-3">
-                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Bank (BCA/Mandiri)" value={formData.gift.banks[0].name} onChange={(e) => updateNested('gift', 'banks', [{ ...formData.gift.banks[0], name: e.target.value }])} />
-                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="No Rekening" value={formData.gift.banks[0].account} onChange={(e) => updateNested('gift', 'banks', [{ ...formData.gift.banks[0], account: e.target.value }])} />
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Bank (Cth: BCA)" value={formData.gift?.banks?.[0]?.name || ''} onChange={(e) => updateNested('gift', 'banks', [{ ...(formData.gift?.banks?.[0] || {}), name: e.target.value }, formData.gift?.banks?.[1] || {}])} />
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="No Rekening" value={formData.gift?.banks?.[0]?.account || ''} onChange={(e) => updateNested('gift', 'banks', [{ ...(formData.gift?.banks?.[0] || {}), account: e.target.value }, formData.gift?.banks?.[1] || {}])} />
                                                         </div>
-                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Atas Nama" value={formData.gift.banks[0].holder} onChange={(e) => updateNested('gift', 'banks', [{ ...formData.gift.banks[0], holder: e.target.value }])} />
+                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Atas Nama" value={formData.gift?.banks?.[0]?.holder || ''} onChange={(e) => updateNested('gift', 'banks', [{ ...(formData.gift?.banks?.[0] || {}), holder: e.target.value }, formData.gift?.banks?.[1] || {}])} />
                                                     </div>
 
+                                                    {/* REKENING 2 */}
+                                                    <div className="space-y-3 pt-3 border-t border-gray-100">
+                                                        <h4 className="font-medium text-sm text-gray-800">Rekening 2</h4>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Bank (Cth: Mandiri)" value={formData.gift?.banks?.[1]?.name || ''} onChange={(e) => updateNested('gift', 'banks', [formData.gift?.banks?.[0] || {}, { ...(formData.gift?.banks?.[1] || {}), name: e.target.value }])} />
+                                                            <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="No Rekening" value={formData.gift?.banks?.[1]?.account || ''} onChange={(e) => updateNested('gift', 'banks', [formData.gift?.banks?.[0] || {}, { ...(formData.gift?.banks?.[1] || {}), account: e.target.value }])} />
+                                                        </div>
+                                                        <input className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none" placeholder="Atas Nama" value={formData.gift?.banks?.[1]?.holder || ''} onChange={(e) => updateNested('gift', 'banks', [formData.gift?.banks?.[0] || {}, { ...(formData.gift?.banks?.[1] || {}), holder: e.target.value }])} />
+                                                    </div>
+
+                                                    {/* LIVE STREAMING */}
                                                     <div className="space-y-3 pt-3 border-t border-gray-100">
                                                         <div className="flex justify-between items-center">
                                                             <h4 className="font-medium text-sm text-gray-800">Live Streaming</h4>
                                                             <label className="flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer">
-                                                                <input type="checkbox" className="accent-black w-3.5 h-3.5" checked={formData.live_stream.enabled} onChange={(e) => setFormData({ ...formData, live_stream: { ...formData.live_stream, enabled: e.target.checked } })} />
+                                                                <input type="checkbox" className="accent-black w-3.5 h-3.5" checked={formData.live_stream?.enabled || false} onChange={(e) => setFormData({ ...formData, live_stream: { ...formData.live_stream, enabled: e.target.checked } })} />
                                                                 Aktifkan
                                                             </label>
                                                         </div>
-                                                        <input className={`w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none ${!formData.live_stream.enabled ? 'opacity-40 pointer-events-none' : ''}`} placeholder="Link Streaming" value={formData.live_stream.url} onChange={(e) => updateNested('live_stream', 'url', e.target.value)} />
+                                                        <input
+                                                            className={`w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none ${!formData.live_stream?.enabled ? 'opacity-40 pointer-events-none' : ''}`}
+                                                            placeholder="Link Streaming"
+                                                            value={formData.live_stream?.url || ''}
+                                                            onChange={(e) => setFormData({ ...formData, live_stream: { ...formData.live_stream, url: e.target.value } })}
+                                                        />
                                                     </div>
 
                                                     <div className="space-y-3 pt-3 border-t border-gray-100">
-                                                        <h4 className="font-medium text-sm text-gray-800">Teks Penutup</h4>
-                                                        <textarea className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none resize-none" rows={3} value={formData.closing_text} onChange={(e) => setFormData({ ...formData, closing_text: e.target.value })} placeholder="Merupakan suatu kehormatan..." />
+                                                        <h4 className="font-medium text-sm text-gray-800">Bagian Penutup</h4>
+
+                                                        {/* Upload Foto Penutup */}
+                                                        <div className="flex items-center gap-4 mb-2">
+                                                            {formData.closingPhoto ? (
+                                                                <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200 shrink-0">
+                                                                    <img src={formData.closingPhoto} alt="Closing" className="w-full h-full object-cover" />
+                                                                    <button type="button" onClick={() => setFormData({ ...formData, closingPhoto: '' })} className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity">
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="w-16 h-16 rounded-full bg-gray-100 border border-gray-200 border-dashed flex items-center justify-center shrink-0">
+                                                                    <ImageIcon className="w-5 h-5 text-gray-400" />
+                                                                </div>
+                                                            )}
+
+                                                            <div className="flex-1">
+                                                                <label className="cursor-pointer bg-white border border-gray-300 px-3 py-1.5 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors inline-block">
+                                                                    Upload Foto Penutup
+                                                                    {/* Sesuaikan nama fungsi upload image lu di sini (contoh: handleImageUpload) */}
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'closingPhoto')} />
+                                                                </label>
+                                                                <p className="text-[10px] text-gray-500 mt-1">Format 1:1 (Bulat) direkomendasikan.</p>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Input Teks */}
+                                                        <textarea className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-black outline-none resize-none" rows={3} value={formData.closing_text || ''} onChange={(e) => setFormData({ ...formData, closing_text: e.target.value })} placeholder="Merupakan suatu kehormatan..." />
                                                     </div>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -709,30 +836,36 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                             {/* AREA PREVIEW (Kanan di Desktop, Bawah di HP) */}
                             <div className="flex-1 w-full flex flex-col md:bg-stone-200 md:items-center md:justify-center md:p-8">
 
-                                {/* h-[calc(100dvh-100px)] ngasih sela/gap 100px di bagian bawah khusus mobile */}
-                                <div className="w-full md:max-w-[400px] h-[calc(100dvh-100px)] md:h-[85vh] bg-stone-100 md:bg-white relative transform translate-x-0 z-0 overflow-x-hidden overflow-y-auto md:rounded-[2rem] border-0 md:border-[12px] md:border-stone-800 md:shadow-2xl shrink-0">
-                                    <TemplateRenderer
-                                        data={{
-                                            invitation_id: user.id,
-                                            template_id: formData.template_id,
-                                            bride_name: formData.brideName,
-                                            groom_name: formData.groomName,
-                                            content_data: {
-                                                coverPhoto: formData.coverPhoto,
-                                                bgPhoto: formData.bgPhoto,
-                                                musicUrl: formData.musicUrl,
-                                                quote: formData.quote,
-                                                bride_details: formData.bride_details,
-                                                groom_details: formData.groom_details,
-                                                events: formData.events,
-                                                gift: formData.gift,
-                                                love_story: formData.love_story,
-                                                live_stream: formData.live_stream,
-                                                closing_text: formData.closing_text,
-                                                sections: formData.sections
-                                            }
-                                        }}
-                                    />
+                                {/* LAPIS 1: Ngurung tombol fixed (Ganti overflow-y-auto jadi overflow-hidden) */}
+                                <div className="w-full md:max-w-[400px] h-[calc(100dvh-100px)] md:h-[85vh] bg-stone-100 md:bg-white relative transform translate-x-0 z-0 overflow-hidden md:rounded-[2rem] border-0 md:border-[12px] md:border-stone-800 md:shadow-2xl shrink-0">
+
+                                    {/* LAPIS 2: Area khusus scroll konten */}
+                                    <div className="w-full h-full overflow-x-hidden overflow-y-auto">
+                                        <TemplateRenderer
+                                            data={{
+                                                invitation_id: user.id,
+                                                template_id: formData.template_id,
+                                                bride_name: formData.brideName,
+                                                groom_name: formData.groomName,
+                                                isPreview: true,
+                                                content_data: {
+                                                    coverPhoto: formData.coverPhoto,
+                                                    bgPhoto: formData.bgPhoto,
+                                                    closingPhoto: formData.closingPhoto,
+                                                    musicUrl: formData.musicUrl,
+                                                    quote: formData.quote,
+                                                    bride_details: formData.bride_details,
+                                                    groom_details: formData.groom_details,
+                                                    events: formData.events,
+                                                    gift: formData.gift,
+                                                    love_story: formData.love_story,
+                                                    live_stream: formData.live_stream,
+                                                    closing_text: formData.closing_text,
+                                                    sections: formData.sections
+                                                }
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -753,58 +886,29 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
                     {/* LAYOUT KOMENTAR */}
                     {activeMenu === 'komentar' && (
-                        <div className="h-full bg-[#F8FAFC] p-4 md:p-8 overflow-y-auto">
-                            <div className="max-w-3xl mx-auto">
-                                <div className="mb-6">
-                                    <h2 className="text-2xl font-bold text-gray-800">Ucapan & Konfirmasi Kehadiran</h2>
-                                    <p className="text-sm text-gray-500">Daftar ucapan dan konfirmasi kehadiran dari tamu undangan.</p>
-                                </div>
-
-                                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                                    {isLoadingComments ? (
-                                        <div className="p-8 text-center text-gray-500">Memuat data...</div>
-                                    ) : comments.length === 0 ? (
-                                        <div className="p-12 text-center text-gray-400">
-                                            <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                                            <p>Belum ada ucapan dari tamu.</p>
-                                        </div>
-                                    ) : (
-                                        <ul className="divide-y divide-gray-100">
-                                            {comments.map((comment) => (
-                                                <li key={comment.id} className="p-5 hover:bg-gray-50 transition-colors">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <h4 className="font-bold text-gray-800">{comment.name}</h4>
-                                                        <span className={`text-[10px] px-2 py-1 rounded font-bold ${comment.attendance === 'hadir' ? 'bg-green-100 text-green-700' :
-                                                            comment.attendance === 'tidak_hadir' ? 'bg-red-100 text-red-700' :
-                                                                'bg-gray-100 text-gray-700'
-                                                            }`}>
-                                                            {comment.attendance === 'hadir' ? '✅ Hadir' : comment.attendance === 'tidak_hadir' ? '❌ Tidak Hadir' : 'Ragu-ragu'}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 mb-2">{comment.message}</p>
-                                                    <span className="text-[10px] text-gray-400">
-                                                        {new Date(comment.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        <CommentsTab
+                            comments={comments}
+                            isLoadingComments={isLoadingComments}
+                            onReply={handleReplySubmit}
+                        />
                     )}
 
-                    {/* LAYOUT SEBAR UNDANGAN (Placeholder) */}
+                    {/* LAYOUT SEBAR UNDANGAN */}
                     {activeMenu === 'sebar' && (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-500 p-8 text-center">
-                            <Send className="w-16 h-16 mb-4 text-slate-300" />
-                            <h2 className="font-bold text-xl text-slate-700 mb-2">Sebar Undangan</h2>
-                            <p className="max-w-md">Fitur untuk membuat link khusus per nama tamu dan mengirimkannya otomatis via WhatsApp.</p>
-                        </div>
+                        <ShareTab slug={invitationSlug} />
                     )}
 
                 </main>
             </div>
+            {cropConfig && (
+                <ImageCropper
+                    imageSrc={cropConfig.src}
+                    aspect={cropConfig.aspect}
+                    onCancel={() => setCropConfig(null)}
+                    onSave={handleCropSave}
+                />
+            )}
         </div>
     )
+
 }

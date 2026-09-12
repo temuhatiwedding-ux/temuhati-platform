@@ -3,13 +3,17 @@ export interface InvitationData {
     template_id: string;
     bride_name: string;
     groom_name: string;
+    isPreview?: boolean;
     content_data: {
         coverPhoto?: string;
         bgPhoto?: string;
+        closingPhoto?: string;
+        bridePhoto?: string;
+        groomPhoto?: string;
         musicUrl?: string;
         quote?: string;
-        bride_details?: { fullName: string; order: string; parents: string; ig: string };
-        groom_details?: { fullName: string; order: string; parents: string; ig: string };
+        bride_details?: { fullName: string; order: string; fatherName: string; motherName: string; ig: string };
+        groom_details?: { fullName: string; order: string; fatherName: string; motherName: string; ig: string };
         events?: {
             akad?: { date: string; time: string; location: string; mapUrl: string };
             resepsi?: { date: string; time: string; location: string; mapUrl: string };

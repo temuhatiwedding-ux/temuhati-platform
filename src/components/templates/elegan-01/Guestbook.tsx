@@ -1,62 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useGuestbook } from '@/hooks/useGuestbook'
+import { toast } from 'react-hot-toast'
 
-export default function GuestbookForm({ invitationId, themeColor = '#a68759' }: { invitationId: string, themeColor?: string }) {
-    const [formData, setFormData] = useState({ name: '', attendance: 'hadir', message: '' })
-    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-    const [comments, setComments] = useState<any[]>([])
+export default function Guestbook({ invitationId, themeColor = '#a68759', isPreview = false }: { invitationId: string, themeColor?: string, isPreview?: boolean }) {
+    const { formData, setFormData, status, comments, handleSubmit } = useGuestbook(invitationId)
 
-    const fetchComments = async () => {
-        if (!invitationId) return
-        try {
-            const res = await fetch(`/api/comments?invitation_id=${invitationId}`)
-            if (res.ok) {
-                const data = await res.json()
-                setComments(data)
-            }
-        } catch (error) {
-            console.error('Gagal mengambil komentar', error)
-        }
-    }
-
-    useEffect(() => {
-        fetchComments()
-    }, [invitationId])
-
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Cegat form jika dalam mode preview
+    const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        setStatus('loading')
-
-        try {
-            const res = await fetch('/api/comments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    invitation_id: invitationId,
-                    ...formData
-                })
-            })
-
-            if (!res.ok) throw new Error('Gagal mengirim')
-
-            setStatus('success')
-            setFormData({ name: '', attendance: 'hadir', message: '' })
-            fetchComments()
-
-            setTimeout(() => setStatus('idle'), 3000)
-        } catch (error) {
-            setStatus('error')
+        if (isPreview) {
+            toast.error('Mode pratinjau: Ucapan tidak akan dikirim.')
+            return
         }
+        handleSubmit(e)
     }
 
-    // Hitung total konfirmasi kehadiran
     const countHadir = comments.filter(c => c.attendance === 'hadir').length
     const countTidakHadir = comments.filter(c => c.attendance === 'tidak_hadir').length
 
     return (
         <div className="max-w-lg mx-auto text-white">
-            {/* Header & Statistik */}
             <div className="text-center mb-8">
                 <h3 className="font-serif text-4xl font-bold mb-2">Ucapkan Sesuatu</h3>
                 <p className="text-sm opacity-90 mb-6">Berikan Ucapan & Doa Restu</p>
@@ -79,8 +43,7 @@ export default function GuestbookForm({ invitationId, themeColor = '#a68759' }: 
                 </div>
             )}
 
-            {/* Form Input */}
-            <form onSubmit={handleSubmit} className="space-y-4 mb-10">
+            <form onSubmit={handleFormSubmit} className="space-y-4 mb-10">
                 <input
                     required type="text" placeholder="Nama" value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -101,7 +64,6 @@ export default function GuestbookForm({ invitationId, themeColor = '#a68759' }: 
                     <option value="ragu">Ragu-ragu</option>
                 </select>
 
-                {/* Tombol dengan warna teks dinamis sesuai themeColor */}
                 <button
                     type="submit" disabled={status === 'loading'}
                     style={{ color: themeColor }}
@@ -111,7 +73,6 @@ export default function GuestbookForm({ invitationId, themeColor = '#a68759' }: 
                 </button>
             </form>
 
-            {/* List Komentar */}
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                 {comments.length === 0 ? (
                     <p className="text-center text-sm opacity-80 py-4">Belum ada ucapan.</p>
@@ -125,6 +86,14 @@ export default function GuestbookForm({ invitationId, themeColor = '#a68759' }: 
                                 </span>
                             </div>
                             <p className="text-sm opacity-90 leading-relaxed">{comment.message}</p>
+                            {comment.admin_reply && (
+                                <div className="mt-3 pl-3 border-l-2 border-[#a4825e] bg-stone-50/50 p-2 rounded-r-md">
+                                    <p className="text-[10px] font-bold text-[#a4825e] uppercase tracking-wider mb-1">
+                                        Balasan Mempelai
+                                    </p>
+                                    <p className="text-sm text-gray-700 italic">"{comment.admin_reply}"</p>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}

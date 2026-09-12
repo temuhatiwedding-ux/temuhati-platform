@@ -1,13 +1,52 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import TemplateRenderer from '@/components/templates/TemplateRenderer'
+import { Metadata } from 'next'
 
+// Inisialisasi Supabase satu kali di luar fungsi
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-export default async function InvitationPage({ params }: { params: Promise<{ slug: string }> }) {
+type Props = {
+    params: Promise<{ slug: string }>
+}
+
+// 1. Fungsi Generate Metadata untuk WhatsApp / Sosial Media
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { slug } = await params
+
+    const { data } = await supabase
+        .from('invitations')
+        .select('groom_name, bride_name, content_data')
+        .eq('slug', slug)
+        .single()
+
+    if (!data) {
+        return { title: 'Undangan Pernikahan' }
+    }
+
+    const title = `The Wedding of ${data.groom_name} & ${data.bride_name}`
+
+    // Pastikan path JSON ini sesuai dengan struktur penyimpanan gambar di editor lu
+    const coverImage = data.content_data?.coverPhoto ||
+        data.content_data?.bgPhoto ||
+        'https://temuhatiinvite.com/dummy-photos/default-cover.jpg'
+
+    return {
+        title: title,
+        description: 'Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami.',
+        openGraph: {
+            title: title,
+            description: 'Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami.',
+            images: [coverImage],
+            type: 'website',
+        },
+    }
+}
+
+export default async function InvitationPage({ params }: Props) {
     const { slug } = await params
 
     const { data: invitation } = await supabase
@@ -38,9 +77,6 @@ export default async function InvitationPage({ params }: { params: Promise<{ slu
                     <TemplateRenderer data={invitationData} />
                 </div>
 
-                <div className="w-full text-center py-6 text-xs text-stone-400 font-semibold bg-[#fcfbf9] relative z-0 border-t border-stone-200">
-                    © 2026 Temuhati. All rights reserved.
-                </div>
             </div>
         </div>
     )

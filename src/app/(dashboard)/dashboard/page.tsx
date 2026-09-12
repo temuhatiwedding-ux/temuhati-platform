@@ -1,42 +1,57 @@
+
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import DashboardClient from './DashboardClient'
 
-export default async function DashboardPage() {
+export const dynamic = 'force-dynamic' // Matikan cache Next.js
+
+// Gunakan tipe any sementara agar aman di Next.js 14 maupun 15
+export default async function DashboardPage({ searchParams }: any) {
+    // Await searchParams agar support Next.js versi terbaru
+    const params = await searchParams
+    const clientId = params?.clientId
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) redirect('/login')
 
-    // Cek profile (nomor HP)
+    // Gunakan clientId jika ada (Admin mode), jika tidak gunakan ID sendiri
+    const targetUserId = clientId || user.id
+
+    // Cek profile user yang sedang login (untuk nomor HP)
     const { data: profile } = await supabase
         .from('profiles')
         .select('phone_number')
         .eq('id', user.id)
         .single()
 
-    // Cek apakah data undangan (nama mempelai & slug) sudah ada
+    // Cek data undangan berdasarkan targetUserId (Klien / Diri Sendiri)
     const { data: invitation } = await supabase
         .from('invitations')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .maybeSingle()
 
-    // 1. Cegat jika nomor HP belum ada
+    // 1. Cegat jika nomor HP admin/user belum ada
     if (!profile?.phone_number) {
         return <PhoneForm userId={user.id} userName={user.user_metadata?.full_name || ''} />
     }
 
-    // 2. Cegat jika Nama Mempelai / Slug belum diatur
+    // 2. Cegat jika form inisiasi klien belum diisi
     if (!invitation || !invitation.slug || invitation.bride_name === 'Nama Wanita') {
-        return <SetupInvitationForm userId={user.id} />
+        return <SetupInvitationForm userId={targetUserId} />
     }
 
-    // Lolos semua syarat -> Masuk Editor
-    return <DashboardClient user={user} initialData={invitation} />
+    // Override ID user dengan targetUserId agar upload foto & simpan data masuk ke klien
+    const activeUser = { ...user, id: targetUserId }
+
+    // Gunakan key={targetUserId} agar komponen selalu mereset state saat ganti klien
+    return <DashboardClient key={targetUserId} user={activeUser} initialData={invitation} />
 }
 
-// Komponen Form No HP
+// Komponen Form No HP (Tetap sama)
 function PhoneForm({ userId, userName }: { userId: string, userName: string }) {
     return (
         <div className="flex items-center justify-center h-screen w-full bg-gray-50 p-4 text-black">
@@ -56,7 +71,7 @@ function PhoneForm({ userId, userName }: { userId: string, userName: string }) {
     )
 }
 
-// Komponen Form Setup Nama Mempelai & Slug Custom
+// Komponen Form Setup Nama Mempelai & Slug Custom (Tetap sama, logic insert sudah support parameter userId)
 function SetupInvitationForm({ userId }: { userId: string }) {
     return (
         <div className="flex items-center justify-center h-screen w-full bg-gray-50 p-4 text-black">
@@ -64,9 +79,8 @@ function SetupInvitationForm({ userId }: { userId: string }) {
                 'use server'
                 const groom = formData.get('groom') as string
                 const bride = formData.get('bride') as string
-                const format = formData.get('format') as string // 'pria-wanita' atau 'wanita-pria'
+                const format = formData.get('format') as string
 
-                // Buat slug bersih (contoh: dani-dan-wiwin)
                 const cleanGroom = groom.toLowerCase().replace(/[^a-z0-9]/g, '-')
                 const cleanBride = bride.toLowerCase().replace(/[^a-z0-9]/g, '-')
                 const slug = format === 'pria-wanita' ? `${cleanGroom}-dan-${cleanBride}` : `${cleanBride}-dan-${cleanGroom}`
