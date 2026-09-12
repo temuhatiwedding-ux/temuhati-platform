@@ -22,7 +22,7 @@ const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: 
 const PRESET_MUSIC = [
     { label: '-- Pilih Lagu Bawaan --', value: '' },
     { label: 'Upload Lagu Sendiri', value: 'custom' },
-    { label: 'Laksana Surgaku', value: 'https://temuhatiinvite.com/master-music/laksana-surgaku.mp3' }, // Nanti ganti dengan URL lagu lu di R2
+    { label: 'Laksana Surgaku', value: `${process.env.NEXT_PUBLIC_R2_URL}/master-music/laksana-surgaku.mp3` }, // Nanti ganti dengan URL lagu lu di R2
 
 ]
 

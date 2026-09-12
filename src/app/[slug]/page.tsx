@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Pastikan path JSON ini sesuai dengan struktur penyimpanan gambar di editor lu
     const coverImage = data.content_data?.coverPhoto ||
         data.content_data?.bgPhoto ||
-        'https://temuhatiinvite.com/dummy-photos/default-cover.jpg'
+        `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/default-cover.jpg`
 
     return {
         title: title,

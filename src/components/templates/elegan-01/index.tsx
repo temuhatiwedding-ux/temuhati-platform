@@ -41,7 +41,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
     const [isPlaying, setIsPlaying] = useState(true)
     const audioRef = useRef<HTMLAudioElement>(null)
     const content = data.content_data || {}
-    const defaultMusic = "https://temuhatiinvite.com/master-music/laksana-surgaku.mp3"
+    const defaultMusic = `${process.env.NEXT_PUBLIC_R2_URL}/master-music/laksana-surgaku.mp3`
     const musicUrl = content.musicUrl || defaultMusic
 
     // Data Teks
@@ -59,27 +59,29 @@ export default function Elegan01({ data }: { data: InvitationData }) {
 
     // 1. Ganti fallback galeri ke R2
     const gallery = savedPhotos.length > 0 ? savedPhotos : [
-        'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-1.jpg',
-        'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-2.jpg',
-        'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-3.jpg',
-        'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-4.jpg',
-        'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-5.jpg',
-        'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-6.jpg'
+        `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-1.jpg`,
+
+        `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-2.jpg`,
+        `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-3.jpg`,
+        `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-4.jpg`,
+        `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-5.jpg`,
+        `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-6.jpg`
     ]
+
 
     const themeColor = "#a4825e"
 
     // 2. Ganti fallback cover, foto mempelai, dan penutup ke R2
-    const defaultCover = "https://temuhatiinvite.com/dummy-photos/elegan-01/cover.png"
+    const defaultCover = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/cover.png`
     const coverImage = content.coverPhoto || defaultCover
 
-    const defaultGroom = "https://temuhatiinvite.com/dummy-photos/elegan-01/mempelai-pria.jpg"
+    const defaultGroom = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/mempelai-pria.jpg`
     const groomPhoto = content.groomPhoto || defaultGroom
 
-    const defaultBride = "https://temuhatiinvite.com/dummy-photos/elegan-01/mempelai-wanita.jpg"
+    const defaultBride = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/mempelai-wanita.jpg`
     const bridePhoto = content.bridePhoto || defaultBride
 
-    const defaultClosing = "https://temuhatiinvite.com/dummy-photos/elegan-01/prewedding-penutup.jpg"
+    const defaultClosing = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/prewedding-penutup.jpg`
     const closingPhoto = content.closingPhoto || defaultClosing
 
     const toggleMusic = () => {
@@ -238,7 +240,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                 <div className="mb-8">
                     <img src={groomPhoto} alt="Groom" className="w-2/3 max-w-[240px] aspect-[3/4] object-cover mx-auto rounded-2xl mb-6 shadow-sm" onError={(e) => {
                         e.currentTarget.onerror = null; // Mencegah infinite loop
-                        e.currentTarget.src = 'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-1.jpg';
+                        e.currentTarget.src = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-1.jpg`;
                     }} />
                     <h3 className="text-2xl font-serif font-bold mb-2" style={{ color: themeColor }}>{groom.fullName}</h3>
                     <p className="text-sm text-stone-600 mb-4">Putra {groom.order} dari Bapak {groom.fatherName || '-'} & Ibu {groom.motherName || '-'}</p>
@@ -258,7 +260,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                 <div className="mb-12">
                     <img src={bridePhoto} alt="Bride" className="w-2/3 max-w-[240px] aspect-[3/4] object-cover mx-auto rounded-2xl mb-6 shadow-sm" onError={(e) => {
                         e.currentTarget.onerror = null; // Mencegah infinite loop
-                        e.currentTarget.src = 'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-1.jpg';
+                        e.currentTarget.src = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-1.jpg`;
                     }} />
                     <h3 className="text-2xl font-serif font-bold mb-2" style={{ color: themeColor }}>{bride.fullName}</h3>
                     <p className="text-sm text-stone-600 mb-4">Putri {bride.order} dari Bapak {bride.fatherName || '-'} & Ibu {bride.motherName || '-'}</p>
@@ -357,7 +359,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                                     }`}
                                 onError={(e) => {
                                     e.currentTarget.onerror = null; // Mencegah infinite loop
-                                    e.currentTarget.src = 'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-1.jpg';
+                                    e.currentTarget.src = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-1.jpg`;
                                 }}
                             />
                         ))}
@@ -464,7 +466,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                         src={closingPhoto}
                         alt="Couple Portrait"
                         className="w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.src = 'https://temuhatiinvite.com/dummy-photos/elegan-01/galeri-1.jpg' }}
+                        onError={(e) => { e.currentTarget.src = `${process.env.NEXT_PUBLIC_R2_URL}/dummy-photos/elegan-01/galeri-1.jpg` }}
                     />
                 </div>
 
