@@ -10,7 +10,7 @@ export default function EditClientButton({ clientId }: { clientId: string }) {
     const handleClick = () => {
         setIsLoading(true)
         router.push(`/dashboard?clientId=${clientId}`)
-        router.refresh() // Memaksa Next.js membersihkan cache dan menarik data baru
+        router.refresh()
     }
 
     return (

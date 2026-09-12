@@ -28,8 +28,8 @@ export default function Rustic01({ data }: { data: InvitationData }) {
         }
     }
     // Fallback dummy data untuk mode dev/preview
-    const bride = content.bride_details || { fullName: 'Nama Lengkap Wanita', order: 'Putri Pertama', parents: 'Bapak A & Ibu B', ig: '#' }
-    const groom = content.groom_details || { fullName: 'Nama Lengkap Pria', order: 'Putra Pertama', parents: 'Bapak X & Ibu Y', ig: '#' }
+    const bride = content.bride_details || { fullName: 'Nama Lengkap Wanita', order: 'Pertama', fatherName: 'Bapak A', motherName: 'Ibu B', ig: '#' }
+    const groom = content.groom_details || { fullName: 'Nama Lengkap Pria', order: 'Pertama', fatherName: 'Bapak X', motherName: 'Ibu Y', ig: '#' }
     const events = content.events || {
         akad: { date: '2026-12-31', time: '08:00 WIB', location: 'Masjid Agung', mapUrl: '#' },
         resepsi: { date: '2026-12-31', time: '11:00 WIB', location: 'Gedung Serbaguna', mapUrl: '#' }
@@ -97,13 +97,13 @@ export default function Rustic01({ data }: { data: InvitationData }) {
             <div className="p-8 flex flex-col gap-8 bg-stone-50">
                 <div className="text-center">
                     <h3 className="text-2xl font-serif mb-2">{bride.fullName}</h3>
-                    <p className="text-xs text-stone-500 mb-2">{bride.order} dari {bride.parents}</p>
+                    <p className="text-sm text-stone-600 mb-4">Putri {bride.order} dari Bapak {bride.fatherName || '-'} & Ibu {bride.motherName || '-'}</p>
                     <a href={bride.ig} target="_blank" rel="noreferrer" className="text-xs bg-stone-200 px-3 py-1 rounded">Instagram</a>
                 </div>
                 <div className="text-center text-xl font-serif">&</div>
                 <div className="text-center">
                     <h3 className="text-2xl font-serif mb-2">{groom.fullName}</h3>
-                    <p className="text-xs text-stone-500 mb-2">{groom.order} dari {groom.parents}</p>
+                    <p className="text-sm text-stone-600 mb-4">Putra {groom.order} dari Bapak {groom.fatherName || '-'} & Ibu {groom.motherName || '-'}</p>
                     <a href={groom.ig} target="_blank" rel="noreferrer" className="text-xs bg-stone-200 px-3 py-1 rounded">Instagram</a>
                 </div>
             </div>

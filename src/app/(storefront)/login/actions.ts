@@ -15,7 +15,7 @@ export async function login(formData: FormData) {
     if (error) redirect('/login?error=true')
 
     revalidatePath('/', 'layout')
-    redirect('/dashboard') // Nanti kita buat halaman dashboard ini
+    redirect('/dashboard')
 }
 
 export async function signup(formData: FormData) {
