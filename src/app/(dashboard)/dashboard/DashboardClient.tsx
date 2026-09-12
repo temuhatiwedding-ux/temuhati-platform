@@ -328,9 +328,10 @@ export default function DashboardClient({ user, initialData }: { user: any, init
     }
 
     const copyLink = () => {
-        navigator.clipboard.writeText(`http://localhost:3000/${invitationSlug}`)
-        toast.success('Link berhasil disalin!')
-    }
+        const fullUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://temuhatiinvite.com'}/${invitationSlug}`;
+        navigator.clipboard.writeText(fullUrl);
+        alert('Link berhasil disalin!');
+    };
 
     const [comments, setComments] = useState<any[]>([])
     const [isLoadingComments, setIsLoadingComments] = useState(false)
@@ -470,7 +471,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                             <h3 className="font-bold text-green-800 text-sm">Undangan Aktif</h3>
                                                         </div>
                                                         <p className="text-xs text-green-700 truncate">
-                                                            http://localhost:3000/{invitationSlug}
+                                                            {process.env.NEXT_PUBLIC_APP_URL || 'https://temuhatiinvite.com'}/{invitationSlug}
                                                         </p>
                                                     </div>
                                                     <div className="flex gap-2 w-full sm:w-auto">
