@@ -496,6 +496,15 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                 </p>
             </footer>
 
+            {data.isPreview && isOpened && (
+                <button
+                    onClick={() => setIsOpened(false)}
+                    className="fixed bottom-24 right-4 z-[9999] bg-stone-900/80 backdrop-blur-sm text-white px-4 py-2 rounded-full text-xs font-bold shadow-xl border border-stone-700 hover:bg-stone-800 transition-all"
+                >
+                    ⟲ Kembali ke Cover
+                </button>
+            )}
+
         </div>
     )
 }
