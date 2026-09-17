@@ -30,10 +30,15 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
 
             setIsProcessing(true)
             try {
+                // Ekstrak ID kalau hasil scannya berupa link utuh
+                const scannedId = decodedText.includes('/tiket/')
+                    ? decodedText.split('/tiket/')[1]
+                    : decodedText
+
                 const { data, error } = await supabase
                     .from('guest_list')
                     .select('*')
-                    .eq('id', decodedText)
+                    .eq('id', scannedId) // <-- Gunakan scannedId di sini
                     .eq('slug', slug)
                     .single()
 
