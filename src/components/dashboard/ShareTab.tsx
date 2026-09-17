@@ -131,6 +131,7 @@ export default function ShareTab({ slug }: ShareTabProps) {
 
                 setScannedGuest(data)
                 setActualPax(data.max_pax)
+                setIsProcessing(false)
             } catch (error: any) {
                 toast.error(`Sistem Error: ${error.message}`)
                 setIsProcessing(false)
