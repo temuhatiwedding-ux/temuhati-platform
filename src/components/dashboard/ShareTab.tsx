@@ -252,8 +252,10 @@ export default function ShareTab({ slug }: ShareTabProps) {
             setGuests(prev => prev.map(g => g.id === scannedGuest.id ? { ...g, is_checked_in: true } : g))
 
             setScannedGuest(null)
-            setIsScannerOpen(false)
-            scanLockRef.current = false // <--- BUKA KUNCI KAMERA
+            setIsScannerOpen(false) // Tutup modal dan matikan kamera
+
+            // HAPUS BARIS scanLockRef.current = false DARI SINI
+
         } catch (error: any) {
             toast.error('Terjadi kesalahan sistem saat update data.')
         } finally {
