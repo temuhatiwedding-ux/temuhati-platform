@@ -239,24 +239,38 @@ export default function ShareTab({ slug }: ShareTabProps) {
         if (!scannedGuest) return
         setIsProcessing(true)
 
-        const finalPax = Number(actualPax) || 1
+        try {
+            const finalPax = Number(actualPax) || 1
 
-        const { error } = await supabase
-            .from('guest_list')
-            .update({ is_checked_in: true, actual_pax: finalPax, check_in_time: new Date().toISOString() })
-            .eq('id', scannedGuest.id)
+            const { error } = await supabase
+                .from('guest_list')
+                .update({
+                    is_checked_in: true,
+                    actual_pax: finalPax,
+                    check_in_time: new Date().toISOString()
+                })
+                .eq('id', scannedGuest.id)
 
-        if (error) {
-            toast.error('Gagal melakukan check-in')
-        } else {
+            if (error) {
+                // Munculkan notif error spesifik dari Supabase
+                toast.error(`Gagal Update: ${error.message}`)
+                return
+            }
+
             toast.success(`Check-in berhasil: ${scannedGuest.name}`)
+
             // Update UI list langsung
             setGuests(prev => prev.map(g => g.id === scannedGuest.id ? { ...g, is_checked_in: true } : g))
 
             setScannedGuest(null)
-            setIsScannerOpen(false) // Tutup modal setelah sukses biar reset bersih
+            setIsScannerOpen(false) // Tutup modal otomatis jika sukses
+        } catch (error: any) {
+            console.error("Sistem Error Check-in:", error)
+            toast.error('Terjadi kesalahan sistem saat update data.')
+        } finally {
+            // FINALLY ini yang menjamin tombol "Memproses..." bakal balik normal apapun yang terjadi
+            setIsProcessing(false)
         }
-        setIsProcessing(false)
     }
 
     return (
