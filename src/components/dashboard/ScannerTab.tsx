@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Html5QrcodeScanner } from 'html5-qrcode'
 import { createClient } from '@/utils/supabase/client'
 import toast from 'react-hot-toast'
-import { CheckCircle2, XCircle, Users, UserCheck } from 'lucide-react'
+import { UserCheck } from 'lucide-react'
 
 interface ScannerTabProps {
     slug: string;
@@ -17,67 +17,67 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
     const [isProcessing, setIsProcessing] = useState(false)
 
     useEffect(() => {
-        // Inisialisasi Scanner
         const scanner = new Html5QrcodeScanner(
             "qr-reader",
             { fps: 10, qrbox: { width: 250, height: 250 } },
-            /* verbose= */ false
+            false
         )
 
-        const onScanSuccess = async (decodedText: string) => {
-            if (isProcessing || scannedGuest) return
-
-            setIsProcessing(true)
+        const processQR = async (decodedText: string) => {
             try {
-                // 1. Bersihkan teks hasil scan
                 let scannedId = decodedText.trim()
-
-                // 2. Ekstrak ID dengan lebih aman (buang parameter ? atau slash / di akhir)
                 if (scannedId.includes('/tiket/')) {
                     const urlParts = scannedId.split('/tiket/')
                     scannedId = urlParts[1].split('?')[0].replace(/\/$/, '')
                 }
 
-                // 3. Cek ke database
                 const { data, error } = await supabase
                     .from('guest_list')
                     .select('*')
                     .eq('id', scannedId)
-                    .eq('slug', slug)
                     .single()
 
                 if (error || !data) {
-                    // Log ini buat ngecek di Inspect -> Console kalau masih gagal
-                    console.error("DATA GAGAL:", { url_asli: decodedText, id_ditemukan: scannedId, slug_admin: slug, error_db: error })
-                    toast.error('QR tidak valid untuk undangan ini.')
-                    setIsProcessing(false)
+                    toast.error('QR tidak ditemukan di database.')
+                    setTimeout(() => setIsProcessing(false), 2000)
                     return
                 }
 
                 if (data.is_checked_in) {
                     toast.error(`Tiket atas nama ${data.name} SUDAH DIPAKAI!`)
-                    setIsProcessing(false)
+                    setTimeout(() => setIsProcessing(false), 2000)
                     return
                 }
 
-                // 4. Sukses
                 setScannedGuest(data)
                 setActualPax(data.max_pax)
             } catch (error) {
-                console.error("SISTEM ERROR:", error)
                 toast.error('Terjadi kesalahan sistem.')
-            } finally {
                 setIsProcessing(false)
             }
         }
 
-        scanner.render(onScanSuccess, (err) => { /* abaikan error log scan cari */ })
+        const onScanSuccess = (decodedText: string) => {
+            setIsProcessing((loading) => {
+                if (loading) return true
 
-        // Cleanup saat komponen ditutup
+                // Tambahkan tipe :any agar TS tidak protes
+                setScannedGuest((guest: any) => {
+                    if (guest) return guest
+                    processQR(decodedText)
+                    return null
+                })
+
+                return true
+            })
+        }
+
+        scanner.render(onScanSuccess, () => { })
+
         return () => {
             scanner.clear().catch(console.error)
         }
-    }, [slug, isProcessing, scannedGuest])
+    }, [supabase])
 
     const handleCheckIn = async () => {
         if (!scannedGuest) return
@@ -87,26 +87,19 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
 
         const { error } = await supabase
             .from('guest_list')
-            .update({
-                is_checked_in: true,
-                actual_pax: finalPax,
-                check_in_time: new Date().toISOString()
-            })
+            .update({ is_checked_in: true, actual_pax: finalPax, check_in_time: new Date().toISOString() })
             .eq('id', scannedGuest.id)
 
         if (error) {
             toast.error('Gagal melakukan check-in')
+            setIsProcessing(false)
         } else {
-            toast.success(`Check-in berhasil untuk ${scannedGuest.name}!`)
+            toast.success(`Check-in berhasil: ${scannedGuest.name}`)
 
-            // Tutup modal & jalankan scanner lagi
+            // Cukup reset state tanpa setGuests
             setScannedGuest(null)
-
-            // Untuk mempermudah, kita biarkan user refresh halaman jika pause gagal dilanjut, 
-            // tapi biasanya html5-qrcode bisa otomatis resume jika di-clear state-nya.
-            window.location.reload()
+            setIsProcessing(false)
         }
-        setIsProcessing(false)
     }
 
     return (
@@ -117,12 +110,10 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
                     <p className="text-sm text-gray-500 mt-1">Arahkan QR Code tamu ke area kamera di bawah.</p>
                 </div>
 
-                {/* Wadah Kamera Scanner */}
                 <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
                     <div id="qr-reader" className="w-full rounded-lg overflow-hidden border-none outline-none"></div>
                 </div>
 
-                {/* Modal Konfirmasi Tamu (Muncul saat QR valid di-scan) */}
                 {scannedGuest && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transform transition-all">
@@ -140,7 +131,7 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
                                 </div>
                                 <hr className="border-gray-200 mb-3" />
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm font-semibold text-gray-700">Tamu Aktual yg Hadir:</span>
+                                    <span className="text-sm font-semibold text-gray-700">Tamu yg Hadir:</span>
                                     <input
                                         type="number"
                                         min="1"
@@ -153,10 +144,13 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
 
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => { setScannedGuest(null); window.location.reload(); }}
+                                    onClick={() => {
+                                        setScannedGuest(null)
+                                        setIsProcessing(false)
+                                    }}
                                     className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                                 >
-                                    Batal
+                                    Batal / Scan Ulang
                                 </button>
                                 <button
                                     onClick={handleCheckIn}
@@ -169,7 +163,6 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
                         </div>
                     </div>
                 )}
-
             </div>
         </div>
     )
