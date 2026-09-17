@@ -25,34 +25,44 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
 
         const processQR = async (decodedText: string) => {
             try {
+                // 1. Ekstrak ID
                 let scannedId = decodedText.trim()
                 if (scannedId.includes('/tiket/')) {
                     const urlParts = scannedId.split('/tiket/')
                     scannedId = urlParts[1].split('?')[0].replace(/\/$/, '')
                 }
 
+                // 2. Tarik data dari DB
                 const { data, error } = await supabase
                     .from('guest_list')
                     .select('*')
                     .eq('id', scannedId)
                     .single()
 
-                if (error || !data) {
-                    toast.error('QR tidak ditemukan di database.')
-                    setTimeout(() => setIsProcessing(false), 2000)
+                // 3. Tampilkan error yang spesifik jika gagal
+                if (error) {
+                    toast.error(`Gagal (DB): ${error.message}`)
+                    setTimeout(() => setIsProcessing(false), 3000)
+                    return
+                }
+
+                if (!data) {
+                    toast.error(`Kosong! ID: ${scannedId.substring(0, 8)}... tidak ada.`)
+                    setTimeout(() => setIsProcessing(false), 3000)
                     return
                 }
 
                 if (data.is_checked_in) {
                     toast.error(`Tiket atas nama ${data.name} SUDAH DIPAKAI!`)
-                    setTimeout(() => setIsProcessing(false), 2000)
+                    setTimeout(() => setIsProcessing(false), 3000)
                     return
                 }
 
+                // 4. Sukses
                 setScannedGuest(data)
                 setActualPax(data.max_pax)
-            } catch (error) {
-                toast.error('Terjadi kesalahan sistem.')
+            } catch (error: any) {
+                toast.error(`Sistem Error: ${error.message}`)
                 setIsProcessing(false)
             }
         }
