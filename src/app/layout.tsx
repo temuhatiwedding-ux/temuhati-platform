@@ -27,8 +27,9 @@ export default function RootLayout({
     >
       {/* Tambahkan font-sans dan warna background/teks dari logo di body */}
       <body className="min-h-full flex flex-col font-sans bg-[#FBFBF9] text-[#3A4B40]">
+        <Toaster position="top-center" />
         {children}
-        <Toaster position="bottom-right" />
+
       </body>
     </html>
   );

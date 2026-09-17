@@ -387,7 +387,17 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                 position="top-center"
                 containerStyle={{ zIndex: 99999 }}
                 toastOptions={{
-                    className: 'text-sm font-bold rounded-2xl bg-white text-brand shadow-[0_8px_30px_rgb(0,0,0,0.08)]'
+                    duration: 3000,
+                    style: {
+                        background: '#FFFFFF',
+                        color: '#3A4B40',
+                        border: '1px solid rgba(58, 75, 64, 0.08)',
+                        borderRadius: '999px',
+                        padding: '11px 18px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        boxShadow: '0 6px 24px rgba(0, 0, 0, 0.07)',
+                    },
                 }}
             />
 
@@ -413,10 +423,36 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
                     {/* Status Menyimpan */}
                     <div className="flex items-center">
-                        <span className={`text-[11px] md:text-xs px-3 py-1.5 md:px-4 md:py-2 rounded-full font-bold transition-colors duration-300 ${saveStatus === 'Menyimpan...' ? 'bg-amber-100 text-amber-700' : 'bg-brand/10 text-brand'}`}>
+                        <span
+                            className={`
+            inline-flex items-center gap-1.5
+            text-[11px] md:text-xs
+            px-3 py-1.5
+            rounded-full
+            font-medium
+            shadow-[0_3px_12px_rgba(58,75,64,0.06)]
+            transition-all duration-300
+            ${saveStatus === 'Menyimpan...'
+                                    ? 'bg-white text-amber-600'
+                                    : 'bg-[#F0F5F2] border border-[#D1E0D7] text-[#3A4B40]'
+                                }
+        `}
+                        >
+                            <span
+                                className={`
+                w-1.5 h-1.5 rounded-full
+                transition-all duration-300
+                ${saveStatus === 'Menyimpan...'
+                                        ? 'bg-amber-400 animate-pulse'
+                                        : 'bg-[#6B8F7B]'
+                                    }
+            `}
+                            />
                             {saveStatus}
                         </span>
                     </div>
+
+
                 </header>
 
                 {/* Konten Dinamis */}

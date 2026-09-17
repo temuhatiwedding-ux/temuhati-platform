@@ -1,14 +1,11 @@
-
-
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import DashboardClient from './DashboardClient'
+import SetupInvitationForm from './SetupInvitationForm' // Tambahkan import ini
 
-export const dynamic = 'force-dynamic' // Matikan cache Next.js
+export const dynamic = 'force-dynamic'
 
-// Gunakan tipe any sementara agar aman di Next.js 14 maupun 15
 export default async function DashboardPage({ searchParams }: any) {
-    // Await searchParams agar support Next.js versi terbaru
     const params = await searchParams
     const clientId = params?.clientId
 
@@ -17,103 +14,221 @@ export default async function DashboardPage({ searchParams }: any) {
 
     if (!user) redirect('/login')
 
-    // Gunakan clientId jika ada (Admin mode), jika tidak gunakan ID sendiri
     const targetUserId = clientId || user.id
 
-    // Cek profile user yang sedang login (untuk nomor HP)
     const { data: profile } = await supabase
         .from('profiles')
         .select('phone_number')
         .eq('id', user.id)
         .single()
 
-    // Cek data undangan berdasarkan targetUserId (Klien / Diri Sendiri)
     const { data: invitation } = await supabase
         .from('invitations')
         .select('*')
         .eq('user_id', targetUserId)
         .maybeSingle()
 
-    // 1. Cegat jika nomor HP admin/user belum ada
+    // Server Action terpisah khusus untuk dipassing ke Client Component
+    async function handleSetupInvitation(formData: FormData) {
+        'use server'
+
+        const groom = formData.get('groom') as string
+        const bride = formData.get('bride') as string
+        const format = formData.get('format') as string
+
+        const cleanGroom = groom.toLowerCase().replace(/[^a-z0-9]/g, '-')
+        const cleanBride = bride.toLowerCase().replace(/[^a-z0-9]/g, '-')
+
+        const slug = format === 'pria-wanita'
+            ? `${cleanGroom}-dan-${cleanBride}`
+            : `${cleanBride}-dan-${cleanGroom}`
+
+        const supabase = await createClient()
+
+        await supabase.from('invitations').insert({
+            user_id: targetUserId, // Selalu gunakan targetUserId di sini
+            groom_name: groom,
+            bride_name: bride,
+            slug: `undanganpernikahan-${slug}-${Date.now().toString().slice(-4)}`,
+            template_id: 'rustic-01',
+            status: 'DRAFT',
+            content_data: {
+                sections: {
+                    gallery: { enabled: true },
+                },
+            },
+        })
+
+        redirect('/dashboard')
+    }
+
     if (!profile?.phone_number) {
-        return <PhoneForm userId={user.id} userName={user.user_metadata?.full_name || ''} />
+        return (
+            <PhoneForm
+                userId={user.id}
+                userName={user.user_metadata?.full_name || ''}
+            />
+        )
     }
 
-    // 2. Cegat jika form inisiasi klien belum diisi
     if (!invitation || !invitation.slug || invitation.bride_name === 'Nama Wanita') {
-        return <SetupInvitationForm userId={targetUserId} />
+        // Oper action handleSubmit ke Client Component
+        return <SetupInvitationForm userId={targetUserId} actionSubmit={handleSetupInvitation} />
     }
 
-    // Override ID user dengan targetUserId agar upload foto & simpan data masuk ke klien
     const activeUser = { ...user, id: targetUserId }
 
-    // Gunakan key={targetUserId} agar komponen selalu mereset state saat ganti klien
-    return <DashboardClient key={targetUserId} user={activeUser} initialData={invitation} />
+    return (
+        <DashboardClient
+            key={targetUserId}
+            user={activeUser}
+            initialData={invitation}
+        />
+    )
 }
 
-// Komponen Form No HP (Tetap sama)
-function PhoneForm({ userId, userName }: { userId: string, userName: string }) {
+
+// ============================================================
+// LOGO
+// ============================================================
+
+function TemuHatiLogo() {
     return (
-        <div className="flex items-center justify-center h-screen w-full bg-gray-50 p-4 text-black">
-            <form action={async (formData) => {
-                'use server'
-                const phone = formData.get('phone') as string
-                const supabase = await createClient()
-                await supabase.from('profiles').upsert({ id: userId, full_name: userName, phone_number: phone })
-                redirect('/dashboard')
-            }} className="bg-white p-8 rounded-xl shadow-md w-full max-w-md border border-gray-200">
-                <h2 className="text-2xl font-bold mb-2">Lengkapi Profil</h2>
-                <p className="text-gray-600 text-sm mb-6">Masukkan nomor WhatsApp Anda.</p>
-                <input type="tel" name="phone" required placeholder="Contoh: 081234567890" className="w-full border p-3 rounded-lg mb-6 outline-none focus:ring-2 focus:ring-black" />
-                <button type="submit" className="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-gray-800">Simpan & Lanjutkan</button>
-            </form>
+        <div className="flex items-center justify-center gap-2.5 mb-8">
+            <img
+                src="/icon.svg"
+                alt="TemuHati"
+                className="w-9 h-9 object-contain"
+            />
+
+            <span className="text-[22px] font-medium tracking-tight text-[#3A4B40]">
+                TemuHati
+            </span>
         </div>
     )
 }
 
-// Komponen Form Setup Nama Mempelai & Slug Custom (Tetap sama, logic insert sudah support parameter userId)
-function SetupInvitationForm({ userId }: { userId: string }) {
+
+// ============================================================
+// PROGRESS INDICATOR
+// ============================================================
+
+function StepIndicator({ step }: { step: 1 | 2 }) {
     return (
-        <div className="flex items-center justify-center h-screen w-full bg-gray-50 p-4 text-black">
-            <form action={async (formData) => {
-                'use server'
-                const groom = formData.get('groom') as string
-                const bride = formData.get('bride') as string
-                const format = formData.get('format') as string
+        <div className="flex items-center justify-center gap-2 mb-7">
+            <div
+                className={`h-1.5 rounded-full transition-all ${step === 1
+                    ? 'w-8 bg-[#3A4B40]'
+                    : 'w-5 bg-[#D1E0D7]'
+                    }`}
+            />
 
-                const cleanGroom = groom.toLowerCase().replace(/[^a-z0-9]/g, '-')
-                const cleanBride = bride.toLowerCase().replace(/[^a-z0-9]/g, '-')
-                const slug = format === 'pria-wanita' ? `${cleanGroom}-dan-${cleanBride}` : `${cleanBride}-dan-${cleanGroom}`
-
-                const supabase = await createClient()
-                await supabase.from('invitations').insert({
-                    user_id: userId,
-                    groom_name: groom,
-                    bride_name: bride,
-                    slug: `undanganpernikahan-${slug}-${Date.now().toString().slice(-4)}`,
-                    template_id: 'rustic-01',
-                    status: 'DRAFT',
-                    content_data: { sections: { gallery: { enabled: true } } }
-                })
-                redirect('/dashboard')
-            }} className="bg-white p-8 rounded-xl shadow-md w-full max-w-md border border-gray-200">
-                <h2 className="text-2xl font-bold mb-2">Atur Nama Mempelai</h2>
-                <p className="text-gray-600 text-sm mb-6">Tentukan nama pasangan dan format urutan link undangan.</p>
-
-                <label className="block text-sm font-semibold mb-1">Nama Pria</label>
-                <input type="text" name="groom" required placeholder="Contoh: Dani" className="w-full border p-3 rounded-lg mb-4 outline-none focus:ring-2 focus:ring-black" />
-
-                <label className="block text-sm font-semibold mb-1">Nama Wanita</label>
-                <input type="text" name="bride" required placeholder="Contoh: Wiwin" className="w-full border p-3 rounded-lg mb-4 outline-none focus:ring-2 focus:ring-black" />
-
-                <label className="block text-sm font-semibold mb-1">Urutan Nama di Link URL</label>
-                <select name="format" className="w-full border p-3 rounded-lg mb-6 outline-none focus:ring-2 focus:ring-black bg-white">
-                    <option value="pria-wanita">Pria di Depan (Contoh: /dani-dan-wiwin)</option>
-                    <option value="wanita-pria">Wanita di Depan (Contoh: /wiwin-dan-dani)</option>
-                </select>
-
-                <button type="submit" className="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-gray-800">Buat Undangan</button>
-            </form>
+            <div
+                className={`h-1.5 rounded-full transition-all ${step === 2
+                    ? 'w-8 bg-[#3A4B40]'
+                    : 'w-5 bg-[#D1E0D7]'
+                    }`}
+            />
         </div>
     )
 }
+
+
+// ============================================================
+// FORM NO HP
+// ============================================================
+
+function PhoneForm({
+    userId,
+    userName,
+}: {
+    userId: string
+    userName: string
+}) {
+    return (
+        <div className="relative flex min-h-screen w-full items-center justify-center bg-[#FBFBF9] px-5 py-10 text-[#3A4B40] overflow-hidden">
+
+            {/* Decorative background */}
+            <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#E8EFEA] opacity-50" />
+            <div className="pointer-events-none absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-[#F1E9DF] opacity-50" />
+
+            <div className="relative z-10 w-full max-w-[440px]">
+
+                <TemuHatiLogo />
+
+                <div className="rounded-[2rem] border border-[#D1E0D7] bg-white p-7 shadow-[0_18px_50px_rgba(58,75,64,0.07)] sm:p-9">
+
+                    <StepIndicator step={1} />
+
+                    {/* Heading */}
+                    <div className="mb-8 text-center">
+
+
+                        <h1 className="text-[28px] font-semibold tracking-tight text-[#3A4B40]">
+                            Lengkapi Profil
+                        </h1>
+
+
+                    </div>
+
+                    <form
+                        action={async (formData) => {
+                            'use server'
+
+                            const phone = formData.get('phone') as string
+
+                            const supabase = await createClient()
+
+                            await supabase
+                                .from('profiles')
+                                .upsert({
+                                    id: userId,
+                                    full_name: userName,
+                                    phone_number: phone,
+                                })
+
+                            redirect('/dashboard')
+                        }}
+                    >
+
+                        <div className="mb-6">
+                            <label
+                                htmlFor="phone"
+                                className="mb-2 block text-sm font-medium text-[#3A4B40]"
+                            >
+                                Nomor WhatsApp
+                            </label>
+
+                            <input
+                                id="phone"
+                                type="tel"
+                                name="phone"
+                                required
+                                placeholder="Contoh: 081234567890"
+                                className="w-full rounded-2xl border border-[#D1E0D7] bg-white px-4 py-3.5 text-sm text-[#3A4B40] placeholder:text-[#A5B2AA] outline-none transition-all focus:border-[#8BA896] focus:ring-4 focus:ring-[#8BA896]/10"
+                            />
+
+                            <p className="mt-2.5 px-1 text-xs leading-5 text-[#8A958F]">
+                                Nomor ini digunakan untuk kebutuhan komunikasi
+                                terkait undanganmu.
+                            </p>
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3A4B40] px-5 py-3.5 text-sm font-semibold text-[#FBFBF9] shadow-[0_8px_20px_rgba(58,75,64,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#304037] hover:shadow-[0_12px_25px_rgba(58,75,64,0.20)]"
+                        >
+                            Simpan & Lanjutkan
+
+
+                        </button>
+                    </form>
+                </div>
+
+
+            </div>
+        </div>
+    )
+}
+
+

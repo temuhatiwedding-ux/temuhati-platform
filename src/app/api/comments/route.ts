@@ -5,7 +5,8 @@ import { createClient } from '@/utils/supabase/server' // Sesuaikan path jika be
 export async function POST(req: Request) {
     try {
         const supabase = await createClient()
-        const { invitation_id, name, attendance, message } = await req.json()
+        // Tambahkan guest_count di sini
+        const { invitation_id, name, attendance, message, guest_count } = await req.json()
 
         if (!invitation_id || !name || !attendance) {
             return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 })
@@ -13,7 +14,8 @@ export async function POST(req: Request) {
 
         const { error } = await supabase
             .from('comments')
-            .insert([{ invitation_id, name, attendance, message }])
+            // Tambahkan guest_count di dalam insert
+            .insert([{ invitation_id, name, attendance, message, guest_count }])
 
         if (error) throw error
 

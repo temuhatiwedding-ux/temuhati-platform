@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageSquare, Users, CheckCircle, XCircle, CornerDownRight } from 'lucide-react'
+import { MessageSquare, Users, CheckCircle, XCircle, CornerDownRight, UserPlus } from 'lucide-react'
 
 interface Comment {
     id: string;
     name: string;
     attendance: 'hadir' | 'tidak_hadir' | 'ragu';
+    guest_count?: number; // <-- Tambahan kolom jumlah tamu
     message: string;
     created_at: string;
     admin_reply?: string;
@@ -26,6 +27,11 @@ export default function CommentsTab({ comments, isLoadingComments, onReply }: Co
     const hadir = comments.filter(c => c.attendance === 'hadir').length
     const tidakHadir = comments.filter(c => c.attendance === 'tidak_hadir').length
 
+    // Hitung total kepala/tamu yang hadir
+    const totalTamuHadir = comments.reduce((sum, c) => {
+        return c.attendance === 'hadir' ? sum + (Number(c.guest_count) || 1) : sum
+    }, 0)
+
     const handleReply = (id: string) => {
         if (onReply && replyText.trim()) {
             onReply(id, replyText)
@@ -42,26 +48,33 @@ export default function CommentsTab({ comments, isLoadingComments, onReply }: Co
                     <p className="text-sm text-gray-500 mt-1">Kelola pesan dan konfirmasi tamu.</p>
                 </div>
 
-                {/* Statistik */}
-                <div className="grid grid-cols-3 gap-4 mb-8">
+                {/* Statistik diubah jadi 4 kolom */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
                         <div className="p-3 bg-blue-50 text-blue-600 rounded-lg"><Users className="w-5 h-5" /></div>
                         <div>
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Pesan</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pesan</p>
                             <p className="text-2xl font-bold text-gray-900">{total}</p>
                         </div>
                     </div>
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
                         <div className="p-3 bg-green-50 text-green-600 rounded-lg"><CheckCircle className="w-5 h-5" /></div>
                         <div>
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Hadir</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Hadir</p>
                             <p className="text-2xl font-bold text-gray-900">{hadir}</p>
+                        </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-teal-50 text-teal-600 rounded-lg"><UserPlus className="w-5 h-5" /></div>
+                        <div>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Tamu</p>
+                            <p className="text-2xl font-bold text-gray-900">{totalTamuHadir}</p>
                         </div>
                     </div>
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
                         <div className="p-3 bg-red-50 text-red-600 rounded-lg"><XCircle className="w-5 h-5" /></div>
                         <div>
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Tidak Hadir</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Tdk Hadir</p>
                             <p className="text-2xl font-bold text-gray-900">{tidakHadir}</p>
                         </div>
                     </div>
@@ -87,12 +100,21 @@ export default function CommentsTab({ comments, isLoadingComments, onReply }: Co
                                                 {new Date(comment.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
-                                        <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide ${comment.attendance === 'hadir' ? 'bg-green-100 text-green-700' :
-                                                comment.attendance === 'tidak_hadir' ? 'bg-red-100 text-red-700' :
-                                                    'bg-gray-100 text-gray-700'
-                                            }`}>
-                                            {comment.attendance === 'hadir' ? 'Hadir' : comment.attendance === 'tidak_hadir' ? 'Tidak Hadir' : 'Ragu'}
-                                        </span>
+                                        <div className="flex gap-2 items-center">
+                                            <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide ${comment.attendance === 'hadir' ? 'bg-green-100 text-green-700' :
+                                                    comment.attendance === 'tidak_hadir' ? 'bg-red-100 text-red-700' :
+                                                        'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                {comment.attendance === 'hadir' ? 'Hadir' : comment.attendance === 'tidak_hadir' ? 'Tidak Hadir' : 'Ragu'}
+                                            </span>
+
+                                            {/* Badge Jumlah Tamu */}
+                                            {comment.attendance === 'hadir' && (
+                                                <span className="text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide bg-teal-100 text-teal-700">
+                                                    {comment.guest_count || 1} Orang
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <p className="text-sm text-gray-700 leading-relaxed mb-4">{comment.message}</p>
 

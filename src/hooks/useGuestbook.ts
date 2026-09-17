@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 
 export function useGuestbook(invitationId: string) {
-    const [formData, setFormData] = useState({ name: '', attendance: 'hadir', message: '' })
+    // Tambahkan guest_count: 1 di sini
+    const [formData, setFormData] = useState({ name: '', attendance: 'hadir', message: '', guest_count: 1 })
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
     const [comments, setComments] = useState<any[]>([])
 
@@ -26,7 +27,9 @@ export function useGuestbook(invitationId: string) {
             })
             if (!res.ok) throw new Error('Gagal')
             setStatus('success')
-            setFormData({ name: '', attendance: 'hadir', message: '' })
+
+            // Tambahkan guest_count: 1 juga di sini untuk reset form
+            setFormData({ name: '', attendance: 'hadir', message: '', guest_count: 1 })
             fetchComments()
             setTimeout(() => setStatus('idle'), 3000)
         } catch (error) {

@@ -45,24 +45,50 @@ export default function Guestbook({ invitationId, themeColor = '#a68759', isPrev
 
             <form onSubmit={handleFormSubmit} className="space-y-4 mb-10">
                 <input
-                    required type="text" placeholder="Nama" value={formData.name}
+                    required type="text" placeholder="Nama" value={formData.name || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full bg-white text-stone-800 rounded-lg p-3.5 text-sm outline-none focus:ring-2 focus:ring-white/50 placeholder:text-stone-400 shadow-sm"
                 />
                 <textarea
-                    required rows={3} placeholder="Tulis ucapan dan doa Anda di sini..." value={formData.message}
+                    required rows={3} placeholder="Tulis ucapan dan doa Anda di sini..." value={formData.message || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
                     className="w-full bg-white text-stone-800 rounded-lg p-3.5 text-sm outline-none focus:ring-2 focus:ring-white/50 resize-none placeholder:text-stone-400 shadow-sm"
                 />
-                <select
-                    value={formData.attendance}
-                    onChange={(e) => setFormData(prev => ({ ...prev, attendance: e.target.value }))}
-                    className="w-full bg-white text-stone-800 rounded-lg p-3.5 text-sm outline-none focus:ring-2 focus:ring-white/50 shadow-sm"
-                >
-                    <option value="hadir">Konfirmasi Kehadiran: Hadir</option>
-                    <option value="tidak_hadir">Tidak Hadir</option>
-                    <option value="ragu">Ragu-ragu</option>
-                </select>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <select
+                        value={formData.attendance || 'hadir'}
+                        onChange={(e) => {
+                            const newAttendance = e.target.value
+                            setFormData(prev => ({
+                                ...prev,
+                                attendance: newAttendance,
+                                // Kalau batal hadir, reset jumlah tamu jadi 1 biar data rapi
+                                guest_count: newAttendance === 'hadir' ? (prev.guest_count || 1) : 1
+                            }))
+                        }}
+                        className="w-full bg-white text-stone-800 rounded-lg p-3.5 text-sm outline-none focus:ring-2 focus:ring-white/50 shadow-sm"
+                    >
+                        <option value="hadir">Hadir</option>
+                        <option value="tidak_hadir">Tidak Hadir</option>
+                        <option value="ragu">Ragu-ragu</option>
+                    </select>
+
+                    {/* Form Jumlah Tamu HANYA muncul kalau pilih Hadir */}
+                    {formData.attendance === 'hadir' && (
+                        <select
+                            value={formData.guest_count || 1}
+                            onChange={(e) => setFormData(prev => ({ ...prev, guest_count: parseInt(e.target.value) }))}
+                            className="w-full bg-white text-stone-800 rounded-lg p-3.5 text-sm outline-none focus:ring-2 focus:ring-white/50 shadow-sm"
+                        >
+                            <option value={1}>1 Orang</option>
+                            <option value={2}>2 Orang</option>
+                            <option value={3}>3 Orang</option>
+                            <option value={4}>4 Orang</option>
+                            <option value={5}>5 Orang</option>
+                        </select>
+                    )}
+                </div>
 
                 <button
                     type="submit" disabled={status === 'loading'}
@@ -81,9 +107,17 @@ export default function Guestbook({ invitationId, themeColor = '#a68759', isPrev
                         <div key={comment.id} className="bg-black/10 backdrop-blur-sm p-4 rounded-xl border border-white/5 shadow-sm">
                             <div className="flex items-center justify-between mb-2">
                                 <h5 className="font-bold text-sm">{comment.name}</h5>
-                                <span className="text-[10px] px-2.5 py-1 rounded-md bg-black/20 font-bold uppercase tracking-wider">
-                                    {comment.attendance === 'hadir' ? 'Hadir' : comment.attendance === 'tidak_hadir' ? 'Tidak Hadir' : 'Ragu'}
-                                </span>
+
+                                <div className="flex gap-1.5">
+                                    <span className="text-[10px] px-2.5 py-1 rounded-md bg-black/20 font-bold uppercase tracking-wider">
+                                        {comment.attendance === 'hadir' ? 'Hadir' : comment.attendance === 'tidak_hadir' ? 'Tidak Hadir' : 'Ragu'}
+                                    </span>
+                                    {comment.attendance === 'hadir' && comment.guest_count && (
+                                        <span className="text-[10px] px-2.5 py-1 rounded-md bg-white/20 font-bold uppercase tracking-wider">
+                                            {comment.guest_count} Orang
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <p className="text-sm opacity-90 leading-relaxed">{comment.message}</p>
                             {comment.admin_reply && (

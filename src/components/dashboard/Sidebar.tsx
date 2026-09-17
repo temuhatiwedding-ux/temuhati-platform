@@ -11,9 +11,24 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeMenu, s
     return (
         <>
             {isSidebarOpen && (
-                <div className="md:hidden fixed inset-0 bg-brand/40 backdrop-blur-sm z-40 transition-opacity" onClick={() => setIsSidebarOpen(false)} />
+                <div
+                    className="md:hidden fixed inset-0 bg-[#3A4B40]/15 backdrop-blur-[4px] z-40 transition-all duration-300"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
             )}
-            <aside className={`fixed md:relative z-50 w-64 bg-brand-light h-full transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 flex flex-col md:rounded-r-[2rem] shadow-[12px_0_40px_rgba(58,75,64,0.08)]`}>
+            <aside
+                className={`
+        fixed md:relative z-50 w-64
+        bg-[#F0F5F2]
+        h-full
+        transition-transform duration-300
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0
+        flex flex-col
+        md:rounded-r-[2rem]
+        shadow-[12px_0_40px_rgba(58,75,64,0.08)]
+    `}
+            >
                 <div className="h-[72px] flex items-center px-6">
                     <h1 className="font-bold text-2xl tracking-tight text-brand flex items-center gap-2">
                         TemuHati
