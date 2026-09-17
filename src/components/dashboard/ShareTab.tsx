@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Send, Copy, Plus, Trash2, MessageCircle, CheckCircle2, Camera, X, UserCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/utils/supabase/client'
@@ -50,6 +50,7 @@ export default function ShareTab({ slug }: ShareTabProps) {
     const [scannedGuest, setScannedGuest] = useState<any>(null)
     const [actualPax, setActualPax] = useState<number | string>(1)
     const [isProcessing, setIsProcessing] = useState(false)
+    const scannerRef = useRef<Html5QrcodeScanner | null>(null)
 
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://temuhatiinvite.com'
     const baseInvitationUrl = `${baseUrl}/${slug}`
@@ -77,57 +78,86 @@ export default function ShareTab({ slug }: ShareTabProps) {
         if (slug) fetchGuests()
     }, [slug])
 
-    // Effect khusus untuk menjalankan Scanner
     useEffect(() => {
-        if (!isScannerOpen) return
+        if (!isScannerOpen) {
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(console.error)
+                scannerRef.current = null
+            }
+            return
+        }
+
+        if (scannerRef.current) return // Cegah kamera nyala 2x
 
         const scanner = new Html5QrcodeScanner(
             "qr-reader",
             { fps: 10, qrbox: { width: 250, height: 250 } },
             false
         )
+        scannerRef.current = scanner
 
-        const onScanSuccess = async (decodedText: string) => {
-            if (isProcessing || scannedGuest) return
-
-            setIsProcessing(true)
+        const processQR = async (decodedText: string) => {
             try {
+                // Ekstrak ID (Fix "QR Tidak Valid")
+                let scannedId = decodedText.trim()
+                if (scannedId.includes('/tiket/')) {
+                    const urlParts = scannedId.split('/tiket/')
+                    scannedId = urlParts[1].split('?')[0].replace(/\/$/, '')
+                }
+
                 const { data, error } = await supabase
                     .from('guest_list')
                     .select('*')
-                    .eq('id', decodedText)
-                    .eq('slug', slug)
-                    .single()
+                    .eq('id', scannedId)
+                    .single() // Filter slug dihapus biar 100% akurat
 
-                if (error || !data) {
-                    toast.error('QR Code tidak valid / bukan undangan ini.')
-                    setIsProcessing(false)
+                if (error) {
+                    toast.error(`Error DB: ${error.message}`)
+                    setTimeout(() => setIsProcessing(false), 2000)
+                    return
+                }
+
+                if (!data) {
+                    toast.error(`Data kosong! ID: ${scannedId.substring(0, 8)}`)
+                    setTimeout(() => setIsProcessing(false), 2000)
                     return
                 }
 
                 if (data.is_checked_in) {
                     toast.error(`Tiket atas nama ${data.name} SUDAH DIPAKAI!`)
-                    setIsProcessing(false)
+                    setTimeout(() => setIsProcessing(false), 2000)
                     return
                 }
 
                 setScannedGuest(data)
                 setActualPax(data.max_pax)
-                scanner.pause(true)
-            } catch (error) {
-                console.error(error)
-                toast.error('Terjadi kesalahan sistem.')
-            } finally {
+            } catch (error: any) {
+                toast.error(`Sistem Error: ${error.message}`)
                 setIsProcessing(false)
             }
+        }
+
+        const onScanSuccess = (decodedText: string) => {
+            setIsProcessing((loading) => {
+                if (loading) return true
+                setScannedGuest((guest: any) => {
+                    if (guest) return guest
+                    processQR(decodedText)
+                    return null
+                })
+                return true
+            })
         }
 
         scanner.render(onScanSuccess, () => { })
 
         return () => {
-            scanner.clear().catch(console.error)
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(console.error)
+                scannerRef.current = null
+            }
         }
-    }, [isScannerOpen, isProcessing, scannedGuest, slug, supabase])
+    }, [isScannerOpen, supabase])
 
     const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value
@@ -393,9 +423,8 @@ export default function ShareTab({ slug }: ShareTabProps) {
                                         <button
                                             onClick={() => {
                                                 setScannedGuest(null)
-                                                // Tutup dan buka ulang state scanner biar me-render kamera lagi
-                                                setIsScannerOpen(false)
-                                                setTimeout(() => setIsScannerOpen(true), 100)
+                                                setIsProcessing(false)
+                                                // Jangan panggil setIsScannerOpen(false) di sini!
                                             }}
                                             className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                                         >
