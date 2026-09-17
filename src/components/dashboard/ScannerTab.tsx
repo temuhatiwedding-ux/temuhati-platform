@@ -25,43 +25,46 @@ export default function ScannerTab({ slug }: ScannerTabProps) {
         )
 
         const onScanSuccess = async (decodedText: string) => {
-            // Cegah scan berulang jika sedang proses atau modal terbuka
             if (isProcessing || scannedGuest) return
 
             setIsProcessing(true)
             try {
-                // Ekstrak ID kalau hasil scannya berupa link utuh
-                const scannedId = decodedText.includes('/tiket/')
-                    ? decodedText.split('/tiket/')[1]
-                    : decodedText
+                // 1. Bersihkan teks hasil scan
+                let scannedId = decodedText.trim()
 
+                // 2. Ekstrak ID dengan lebih aman (buang parameter ? atau slash / di akhir)
+                if (scannedId.includes('/tiket/')) {
+                    const urlParts = scannedId.split('/tiket/')
+                    scannedId = urlParts[1].split('?')[0].replace(/\/$/, '')
+                }
+
+                // 3. Cek ke database
                 const { data, error } = await supabase
                     .from('guest_list')
                     .select('*')
-                    .eq('id', scannedId) // <-- Gunakan scannedId di sini
+                    .eq('id', scannedId)
                     .eq('slug', slug)
                     .single()
 
                 if (error || !data) {
-                    toast.error('QR Code tidak valid atau bukan dari undangan ini.')
+                    // Log ini buat ngecek di Inspect -> Console kalau masih gagal
+                    console.error("DATA GAGAL:", { url_asli: decodedText, id_ditemukan: scannedId, slug_admin: slug, error_db: error })
+                    toast.error('QR tidak valid untuk undangan ini.')
                     setIsProcessing(false)
                     return
                 }
 
                 if (data.is_checked_in) {
-                    toast.error(`Tiket atas nama ${data.name} SUDAH DIGUNAKAN!`)
+                    toast.error(`Tiket atas nama ${data.name} SUDAH DIPAKAI!`)
                     setIsProcessing(false)
                     return
                 }
 
-                // Sukses dapet data, tampilkan ke modal konfirmasi
+                // 4. Sukses
                 setScannedGuest(data)
                 setActualPax(data.max_pax)
-
-                // Pause scanner sementara
-                scanner.pause(true)
             } catch (error) {
-                console.error(error)
+                console.error("SISTEM ERROR:", error)
                 toast.error('Terjadi kesalahan sistem.')
             } finally {
                 setIsProcessing(false)
