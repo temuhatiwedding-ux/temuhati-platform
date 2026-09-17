@@ -383,23 +383,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
     return (
         <div className="flex h-[100dvh] bg-[#FBFBF9] overflow-hidden font-sans text-brand w-full relative">
-            <Toaster
-                position="top-center"
-                containerStyle={{ zIndex: 99999 }}
-                toastOptions={{
-                    duration: 3000,
-                    style: {
-                        background: '#FFFFFF',
-                        color: '#3A4B40',
-                        border: '1px solid rgba(58, 75, 64, 0.08)',
-                        borderRadius: '999px',
-                        padding: '11px 18px',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        boxShadow: '0 6px 24px rgba(0, 0, 0, 0.07)',
-                    },
-                }}
-            />
+
 
             {/* ================= SIDEBAR ================= */}
             <Sidebar
