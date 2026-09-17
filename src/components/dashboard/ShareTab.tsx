@@ -51,7 +51,7 @@ export default function ShareTab({ slug }: ShareTabProps) {
     const [actualPax, setActualPax] = useState<number | string>(1)
     const [isProcessing, setIsProcessing] = useState(false)
     const scannerRef = useRef<Html5QrcodeScanner | null>(null)
-
+    const scanLockRef = useRef(false)
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://temuhatiinvite.com'
     const baseInvitationUrl = `${baseUrl}/${slug}`
 
@@ -84,10 +84,11 @@ export default function ShareTab({ slug }: ShareTabProps) {
                 scannerRef.current.clear().catch(console.error)
                 scannerRef.current = null
             }
+            scanLockRef.current = false // Reset lock saat kamera dimatikan
             return
         }
 
-        if (scannerRef.current) return // Cegah kamera nyala 2x
+        if (scannerRef.current) return
 
         const scanner = new Html5QrcodeScanner(
             "qr-reader",
@@ -96,9 +97,14 @@ export default function ShareTab({ slug }: ShareTabProps) {
         )
         scannerRef.current = scanner
 
-        const processQR = async (decodedText: string) => {
+        const onScanSuccess = async (decodedText: string) => {
+            // Kalau kamera lagi dikunci (modal terbuka / lagi loading), JANGAN BACA QR LAGI
+            if (scanLockRef.current) return
+
+            scanLockRef.current = true // Langsung kunci kamera!
+            setIsProcessing(true) // Tombol berubah jadi "Memproses..."
+
             try {
-                // Ekstrak ID (Fix "QR Tidak Valid")
                 let scannedId = decodedText.trim()
                 if (scannedId.includes('/tiket/')) {
                     const urlParts = scannedId.split('/tiket/')
@@ -109,45 +115,33 @@ export default function ShareTab({ slug }: ShareTabProps) {
                     .from('guest_list')
                     .select('*')
                     .eq('id', scannedId)
-                    .single() // Filter slug dihapus biar 100% akurat
+                    .single()
 
-                if (error) {
-                    toast.error(`Error DB: ${error.message}`)
-                    setTimeout(() => setIsProcessing(false), 2000)
+                if (error || !data || data.is_checked_in) {
+                    if (error) toast.error(`Error DB: ${error.message}`)
+                    else if (!data) toast.error(`Data kosong! ID: ${scannedId.substring(0, 8)}`)
+                    else toast.error(`Tiket atas nama ${data.name} SUDAH DIPAKAI!`)
+
+                    // Beri jeda 2 detik sebelum kamera bisa nge-scan ulang
+                    setTimeout(() => {
+                        setIsProcessing(false)
+                        scanLockRef.current = false // Buka kunci
+                    }, 2000)
                     return
                 }
 
-                if (!data) {
-                    toast.error(`Data kosong! ID: ${scannedId.substring(0, 8)}`)
-                    setTimeout(() => setIsProcessing(false), 2000)
-                    return
-                }
-
-                if (data.is_checked_in) {
-                    toast.error(`Tiket atas nama ${data.name} SUDAH DIPAKAI!`)
-                    setTimeout(() => setIsProcessing(false), 2000)
-                    return
-                }
-
+                // SUKSES NEMU DATA
                 setScannedGuest(data)
                 setActualPax(data.max_pax)
-                setIsProcessing(false)
+                setIsProcessing(false) // Tombol kembali jadi "Konfirmasi Hadir"
+
+                // CATATAN: scanLockRef.current dibiarkan TRUE supaya 
+                // kamera belakang layar nggak nyecan-nyecan lagi selama modal masih terbuka!
             } catch (error: any) {
                 toast.error(`Sistem Error: ${error.message}`)
                 setIsProcessing(false)
+                scanLockRef.current = false
             }
-        }
-
-        const onScanSuccess = (decodedText: string) => {
-            setIsProcessing((loading) => {
-                if (loading) return true
-                setScannedGuest((guest: any) => {
-                    if (guest) return guest
-                    processQR(decodedText)
-                    return null
-                })
-                return true
-            })
         }
 
         scanner.render(onScanSuccess, () => { })
@@ -245,31 +239,24 @@ export default function ShareTab({ slug }: ShareTabProps) {
 
             const { error } = await supabase
                 .from('guest_list')
-                .update({
-                    is_checked_in: true,
-                    actual_pax: finalPax,
-                    check_in_time: new Date().toISOString()
-                })
+                .update({ is_checked_in: true, actual_pax: finalPax, check_in_time: new Date().toISOString() })
                 .eq('id', scannedGuest.id)
 
             if (error) {
-                // Munculkan notif error spesifik dari Supabase
                 toast.error(`Gagal Update: ${error.message}`)
+                setIsProcessing(false)
                 return
             }
 
             toast.success(`Check-in berhasil: ${scannedGuest.name}`)
-
-            // Update UI list langsung
             setGuests(prev => prev.map(g => g.id === scannedGuest.id ? { ...g, is_checked_in: true } : g))
 
             setScannedGuest(null)
-            setIsScannerOpen(false) // Tutup modal otomatis jika sukses
+            setIsScannerOpen(false)
+            scanLockRef.current = false // <--- BUKA KUNCI KAMERA
         } catch (error: any) {
-            console.error("Sistem Error Check-in:", error)
             toast.error('Terjadi kesalahan sistem saat update data.')
         } finally {
-            // FINALLY ini yang menjamin tombol "Memproses..." bakal balik normal apapun yang terjadi
             setIsProcessing(false)
         }
     }
@@ -439,7 +426,7 @@ export default function ShareTab({ slug }: ShareTabProps) {
                                             onClick={() => {
                                                 setScannedGuest(null)
                                                 setIsProcessing(false)
-                                                // Jangan panggil setIsScannerOpen(false) di sini!
+                                                scanLockRef.current = false // <--- BUKA KUNCI KAMERA BIAR BISA SCAN LAGI
                                             }}
                                             className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                                         >
