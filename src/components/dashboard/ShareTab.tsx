@@ -21,7 +21,8 @@ const MESSAGE_TEMPLATES = [
 
 interface ShareTabProps {
     slug: string;
-    hasQrAddon?: boolean; // Default false
+    hasQrAddon?: boolean;
+    hasSelfieAddon?: boolean;
 }
 
 interface Guest {
@@ -29,11 +30,13 @@ interface Guest {
     name: string;
     whatsapp?: string;
     max_pax: number;
+    actual_pax?: number;
+    selfie_url?: string;
     is_sent: boolean;
     is_checked_in: boolean;
 }
 
-export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
+export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = false }: ShareTabProps) {
     const supabase = createClient()
     const [guests, setGuests] = useState<Guest[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -55,6 +58,18 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
     const scanLockRef = useRef(false)
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://temuhatiinvite.com'
     const baseInvitationUrl = `${baseUrl}/${slug}`
+
+    // Search & Manual Check-in States
+    const [searchQuery, setSearchQuery] = useState('')
+    const [manualGuest, setManualGuest] = useState<any>(null)
+    const [manualPax, setManualPax] = useState<number | string>(1)
+
+    // Selfie States & Refs
+    const [selfieData, setSelfieData] = useState<{ isOpen: boolean; guest: any }>({ isOpen: false, guest: null })
+    const [isUploading, setIsUploading] = useState(false)
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const streamRef = useRef<MediaStream | null>(null)
 
     const getNamaMempelai = () => {
         if (!slug) return 'Mempelai'
@@ -208,12 +223,17 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
             .replace(/\[link_undangan\]/g, linkUndangan)
             .replace(/\[nama_mempelai\]/g, getNamaMempelai())
 
-        // Hapus bagian tiket kalau tidak beli add-on
         if (!hasQrAddon) {
-            finalMessage = finalMessage.replace(/🎫 \*Tiket Masuk & QR Code.*\[link_tiket\]\n\n/g, '')
-            finalMessage = finalMessage.replace(/🎫 \*Akses QR Code Check-in.*\[link_tiket\]\n\n/g, '')
-            finalMessage = finalMessage.replace(/\[link_tiket\]/g, '') // sapu bersih sisa tag
+            // Hapus blok teks QR Formal beserta enter-nya
+            finalMessage = finalMessage.replace("\n\n🎫 *Tiket Masuk & QR Code (Wajib ditunjukkan di lokasi):*\n[link_tiket]", "")
+
+            // Hapus blok teks QR Casual beserta enter-nya
+            finalMessage = finalMessage.replace("\n\n🎫 *Akses QR Code Check-in kamu (Tunjukkan di meja tamu ya!):*\n[link_tiket]", "")
+
+            // Jaga-jaga bersihin tag [link_tiket] kalau user ngetik manual di mode Kustom
+            finalMessage = finalMessage.replace(/\[link_tiket\]/g, "")
         } else {
+            // Kalau punya Addon, ganti tag dengan URL asli
             finalMessage = finalMessage.replace(/\[link_tiket\]/g, linkTiket)
         }
 
@@ -278,12 +298,22 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
             }
 
             toast.success(`Check-in berhasil: ${scannedGuest.name}`)
-            setGuests(prev => prev.map(g => g.id === scannedGuest.id ? { ...g, is_checked_in: true } : g))
 
-            setScannedGuest(null)
-            setIsScannerOpen(false) // Tutup modal dan matikan kamera
+            // Update state UI list tamu
+            setGuests(prev => prev.map(g => g.id === scannedGuest.id ? { ...g, is_checked_in: true, actual_pax: finalPax } : g))
 
-            // HAPUS BARIS scanLockRef.current = false DARI SINI
+            // LOGIKA TRANSISI ADD-ON SELFIE
+            if (hasSelfieAddon) {
+                const guestData = { id: scannedGuest.id, name: scannedGuest.name }
+                setScannedGuest(null)
+                setIsScannerOpen(false) // Tutup modal QR dulu
+
+                setSelfieData({ isOpen: true, guest: guestData })
+                startCamera() // Nyalakan kamera selfie
+            } else {
+                setScannedGuest(null)
+                setIsScannerOpen(false)
+            }
 
         } catch (error: any) {
             toast.error('Terjadi kesalahan sistem saat update data.')
@@ -291,6 +321,115 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
             setIsProcessing(false)
         }
     }
+
+    const handleManualCheckIn = async () => {
+        if (!manualGuest) return
+        setIsProcessing(true)
+
+        try {
+            const finalPax = Number(manualPax) || 1
+            const { error } = await supabase
+                .from('guest_list')
+                .update({ is_checked_in: true, actual_pax: finalPax, check_in_time: new Date().toISOString() })
+                .eq('id', manualGuest.id)
+
+            if (error) {
+                toast.error(`Gagal Update: ${error.message}`)
+                return
+            }
+
+            toast.success(`Check-in manual berhasil: ${manualGuest.name}`)
+            setGuests(prev => prev.map(g => g.id === manualGuest.id ? { ...g, is_checked_in: true, actual_pax: finalPax } : g))
+
+            // LOGIKA TRANSISI ADD-ON SELFIE
+            if (hasSelfieAddon) {
+                const guestData = { id: manualGuest.id, name: manualGuest.name }
+                setManualGuest(null) // Tutup modal manual
+
+                setSelfieData({ isOpen: true, guest: guestData })
+                startCamera() // Nyalakan kamera selfie
+            } else {
+                setManualGuest(null)
+            }
+
+        } catch (error: any) {
+            toast.error('Terjadi kesalahan sistem.')
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
+    const startCamera = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream
+                streamRef.current = stream
+            }
+        } catch (err) {
+            toast.error('Gagal mengakses kamera depan.')
+        }
+    }
+
+    const stopCamera = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop())
+            streamRef.current = null
+        }
+    }
+
+    const captureAndUpload = async () => {
+        if (!videoRef.current || !canvasRef.current || !selfieData.guest) return
+
+        const video = videoRef.current
+        const canvas = canvasRef.current
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        // Set ukuran canvas lebih kecil untuk kompresi (misal lebar 600px)
+        const targetWidth = 600
+        const scale = targetWidth / video.videoWidth
+        const targetHeight = video.videoHeight * scale
+
+        canvas.width = targetWidth
+        canvas.height = targetHeight
+
+        // Jepret gambar ke canvas
+        ctx.drawImage(video, 0, 0, targetWidth, targetHeight)
+
+        // KOMPRESI: Ubah ke JPEG dengan kualitas 60% (0.6)
+        const base64Image = canvas.toDataURL('image/jpeg', 0.6)
+
+        setIsUploading(true)
+        try {
+            // 1. Upload ke API Cloudflare lu (Buat endpoint /api/upload-selfie di Next.js lu)
+            const response = await fetch('/api/upload-selfie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Image, guestId: selfieData.guest.id })
+            })
+
+            const { url } = await response.json()
+            if (!url) throw new Error("Gagal dapat URL dari Cloudflare")
+
+            // 2. Simpan URL ke Supabase
+            await supabase.from('guest_list').update({ selfie_url: url }).eq('id', selfieData.guest.id)
+
+            // 3. Update UI List
+            setGuests(prev => prev.map(g => g.id === selfieData.guest.id ? { ...g, selfie_url: url } : g))
+            toast.success('Selfie tersimpan!')
+
+            // Tutup modal
+            stopCamera()
+            setSelfieData({ isOpen: false, guest: null })
+        } catch (error: any) {
+            toast.error('Gagal upload selfie.')
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const filteredGuests = guests.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
     return (
         <div className="h-full bg-stone-50 p-6 md:p-10 overflow-y-auto relative">
@@ -388,6 +527,15 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
                     </div>
 
                     <div className="p-4 overflow-y-auto flex-1">
+                        <div className="p-4 border-b border-gray-100">
+                            <input
+                                type="text"
+                                placeholder="Cari nama tamu..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full p-2.5 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500"
+                            />
+                        </div>
                         {isLoading ? (
                             <div className="text-center py-10 text-gray-500 text-sm">Memuat daftar tamu...</div>
                         ) : guests.length === 0 ? (
@@ -395,35 +543,51 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
                                 <Send className="w-10 h-10 mx-auto mb-3 text-gray-300" />
                                 <p className="text-sm">Belum ada tamu yang ditambahkan.</p>
                             </div>
+
                         ) : (
+
                             <ul className="space-y-3">
-                                {guests.map((guest) => (
+                                {filteredGuests.map((guest) => (
                                     <li key={guest.id} className="p-4 border border-gray-100 rounded-lg bg-gray-50 hover:bg-white transition-colors flex flex-col gap-3">
                                         <div className="flex justify-between items-start">
                                             <div>
+                                                {/* 1. BARIS NAMA, FOTO & CENTANG (Sudah digabung jadi satu) */}
                                                 <div className="flex items-center gap-2 mb-1">
+                                                    {hasSelfieAddon && guest.selfie_url && (
+                                                        <img src={guest.selfie_url} alt="Selfie" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                                                    )}
                                                     <span className="font-bold text-gray-800 text-sm">{guest.name}</span>
-                                                    {/* Centang hanya muncul kalau addon aktif & sudah checkin */}
                                                     {hasQrAddon && guest.is_checked_in && <CheckCircle2 className="w-4 h-4 text-green-500" />}
                                                 </div>
+
+                                                {/* 2. BARIS BADGE STATUS WA & PAX */}
                                                 <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider">
                                                     <span className={`px-2 py-0.5 rounded ${guest.is_sent ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>
                                                         {guest.is_sent ? 'WA Terkirim' : 'Belum Dikirim'}
                                                     </span>
 
-                                                    {/* Badge Pax hanya muncul kalau addon aktif */}
                                                     {hasQrAddon && (
-                                                        <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                                                            {guest.max_pax} Pax
-                                                        </span>
+                                                        <div className="flex gap-1">
+                                                            <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                                                                Kuota: {guest.max_pax}
+                                                            </span>
+                                                            {guest.is_checked_in && (
+                                                                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                                                                    Hadir: {guest.actual_pax || 0}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
+
+                                            {/* 3. TOMBOL HAPUS */}
                                             <button onClick={() => removeGuest(guest.id)} className="text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded-md">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
 
+                                        {/* 4. TOMBOL AKSI BAWAH */}
                                         <div className="flex gap-2 mt-2">
                                             <button onClick={() => copyToClipboard(guest)} className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs py-2 rounded-lg shadow-sm hover:bg-gray-50 flex items-center justify-center gap-1.5 font-medium transition-all">
                                                 <Copy className="w-3.5 h-3.5" /> Copy Teks
@@ -431,6 +595,14 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
                                             <button onClick={() => sendWhatsApp(guest)} className="flex-1 bg-[#25D366] text-white text-xs py-2 rounded-lg shadow-sm hover:bg-[#20b858] flex items-center justify-center gap-1.5 font-medium transition-all">
                                                 <MessageCircle className="w-3.5 h-3.5" /> Kirim WA
                                             </button>
+                                            {hasQrAddon && !guest.is_checked_in && (
+                                                <button
+                                                    onClick={() => { setManualGuest(guest); setManualPax(guest.max_pax); }}
+                                                    className="flex-1 bg-stone-800 text-white text-xs py-2 rounded-lg shadow-sm hover:bg-stone-900 flex items-center justify-center gap-1.5 font-medium transition-all"
+                                                >
+                                                    <UserCheck className="w-3.5 h-3.5" /> Manual Checkin
+                                                </button>
+                                            )}
                                         </div>
                                     </li>
                                 ))}
@@ -512,6 +684,95 @@ export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
                                     <div id="qr-reader" className="w-full rounded-2xl overflow-hidden border-none outline-none bg-black"></div>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* MODAL MANUAL CHECK-IN */}
+            {manualGuest && (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transform transition-all animate-in zoom-in duration-200">
+                        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <UserCheck className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-gray-900 mb-1">Manual Check-in</h3>
+                        <p className="text-center text-gray-500 text-sm mb-6">Atas nama <span className="font-bold text-gray-800">{manualGuest.name}</span></p>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
+                            <div className="flex justify-between items-center mb-3 text-sm">
+                                <span className="text-gray-500">Kuota Undangan:</span>
+                                <span className="font-bold text-gray-800">{manualGuest.max_pax} Orang</span>
+                            </div>
+                            <hr className="border-gray-200 mb-3" />
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-semibold text-gray-700">Tamu yg Hadir:</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={manualPax}
+                                    onChange={(e) => setManualPax(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                    className="w-16 p-2 text-center text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500 font-bold"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setManualGuest(null)}
+                                className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleManualCheckIn}
+                                disabled={isProcessing}
+                                className="flex-1 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-70"
+                            >
+                                {isProcessing ? 'Memproses...' : 'Konfirmasi'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL SELFIE */}
+            {selfieData.isOpen && (
+                <div className="fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-sm rounded-3xl overflow-hidden p-6 shadow-2xl flex flex-col items-center">
+                        <h3 className="font-bold text-gray-900 mb-1">Selfie Kehadiran</h3>
+                        <p className="text-sm text-gray-500 mb-4">{selfieData.guest?.name}</p>
+
+                        {/* Area Kamera */}
+                        <div className="w-full aspect-square bg-black rounded-2xl overflow-hidden relative mb-6">
+                            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover transform scale-x-[-1]" />
+                            {/* Canvas disembunyikan, cuma buat proses gambar */}
+                            <canvas ref={canvasRef} className="hidden" />
+
+                            {isUploading && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-bold">
+                                    Mengunggah...
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex w-full gap-3">
+                            <button
+                                onClick={() => {
+                                    stopCamera()
+                                    setSelfieData({ isOpen: false, guest: null })
+                                }}
+                                disabled={isUploading}
+                                className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl"
+                            >
+                                Lewati
+                            </button>
+                            <button
+                                onClick={captureAndUpload}
+                                disabled={isUploading}
+                                className="flex-1 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl"
+                            >
+                                Jepret & Simpan
+                            </button>
                         </div>
                     </div>
                 </div>
