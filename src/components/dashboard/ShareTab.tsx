@@ -484,46 +484,60 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
 
                 {/* KANAN: List Tamu & Tombol Scanner */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col lg:col-span-7 max-h-[calc(100vh-120px)]">
-                    <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                    <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                         <div className="flex flex-col gap-1">
                             <h3 className="font-semibold text-gray-800 text-sm">Daftar Tamu</h3>
                             <div className="flex gap-2">
                                 <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-bold">{guests.length} Total</span>
-
-                                {/* HANYA MUNCUL JIKA PUNYA ADDON */}
                                 {hasQrAddon && (
                                     <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">{guests.filter(g => g.is_checked_in).length} Hadir</span>
                                 )}
                             </div>
                         </div>
 
-                        {/* TOMBOL SCANNER VS TOMBOL UPGRADE */}
-                        {hasQrAddon ? (
-                            <button
-                                onClick={() => setIsScannerOpen(true)}
-                                className="bg-[#3A4B40] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#2c3931] transition-colors"
-                            >
-                                <Camera className="w-4 h-4" /> Buka Scanner
-                            </button>
-                        ) : (
-                            <button
-                                onClick={async () => {
-                                    // Simulasi Bypass Midtrans untuk Upgrade
-                                    const { error } = await supabase
-                                        .from('invitations')
-                                        .update({ has_qr_addon: true })
-                                        .eq('slug', slug)
+                        <div className="flex gap-2 w-full md:w-auto">
+                            {hasQrAddon ? (
+                                <>
+                                    {/* TOMBOL UPGRADE SELFIE (Simulasi Bypass) */}
+                                    {!hasSelfieAddon && (
+                                        <button
+                                            onClick={async () => {
+                                                const { error } = await supabase.from('invitations').update({ has_selfie_addon: true }).eq('slug', slug)
+                                                if (!error) {
+                                                    alert('Upgrade Selfie Sukses!')
+                                                    window.location.reload()
+                                                }
+                                            }}
+                                            className="flex-1 md:flex-none bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+                                        >
+                                            ✨ +Selfie
+                                        </button>
+                                    )}
 
-                                    if (!error) {
-                                        alert('Upgrade Sukses!')
-                                        window.location.reload() // Atau update state lokal biar tombolnya langsung berubah jadi Scanner
-                                    }
-                                }}
-                                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2"
-                            >
-                                🔒 Beli Fitur QR (Upgrade)
-                            </button>
-                        )}
+                                    {/* TOMBOL SCANNER */}
+                                    <button
+                                        onClick={() => setIsScannerOpen(true)}
+                                        className="flex-1 md:flex-none bg-[#3A4B40] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-[#2c3931] transition-colors"
+                                    >
+                                        <Camera className="w-4 h-4" /> Buka Scanner
+                                    </button>
+                                </>
+                            ) : (
+                                /* TOMBOL UPGRADE QR (Simulasi Bypass) */
+                                <button
+                                    onClick={async () => {
+                                        const { error } = await supabase.from('invitations').update({ has_qr_addon: true }).eq('slug', slug)
+                                        if (!error) {
+                                            alert('Upgrade QR Sukses!')
+                                            window.location.reload()
+                                        }
+                                    }}
+                                    className="w-full md:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+                                >
+                                    🔒 Beli Fitur QR
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="p-4 overflow-y-auto flex-1">

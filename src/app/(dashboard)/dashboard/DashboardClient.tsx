@@ -1042,7 +1042,8 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                     {activeMenu === 'sebar' && (
                         <ShareTab
                             slug={invitationSlug}
-                            hasQrAddon={initialData?.has_qr_addon} // <--- Pakai initialData di sini
+                            hasQrAddon={initialData?.has_qr_addon}
+                            hasSelfieAddon={initialData?.has_selfie_addon}
                         />
                     )}
 
