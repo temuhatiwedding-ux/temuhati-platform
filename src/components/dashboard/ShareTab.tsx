@@ -306,10 +306,15 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
             if (hasSelfieAddon) {
                 const guestData = { id: scannedGuest.id, name: scannedGuest.name }
                 setScannedGuest(null)
-                setIsScannerOpen(false) // Tutup modal QR dulu
+                setIsScannerOpen(false) // Mematikan scanner QR
 
                 setSelfieData({ isOpen: true, guest: guestData })
-                startCamera() // Nyalakan kamera selfie
+
+                // JEDA 800ms: Biarkan hardware HP merilis kamera QR dulu baru buka Selfie
+                setTimeout(() => {
+                    startCamera()
+                }, 800)
+
             } else {
                 setScannedGuest(null)
                 setIsScannerOpen(false)
@@ -361,13 +366,25 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
 
     const startCamera = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+            // Coba akses kamera depan (user)
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' }
+            })
             if (videoRef.current) {
                 videoRef.current.srcObject = stream
                 streamRef.current = stream
             }
         } catch (err) {
-            toast.error('Gagal mengakses kamera depan.')
+            // FALLBACK: Kalau device gagal baca facingMode, buka kamera default apa aja
+            try {
+                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true })
+                if (videoRef.current) {
+                    videoRef.current.srcObject = fallbackStream
+                    streamRef.current = fallbackStream
+                }
+            } catch (fallbackErr) {
+                toast.error('Gagal akses kamera. Cek izin browser lu!')
+            }
         }
     }
 

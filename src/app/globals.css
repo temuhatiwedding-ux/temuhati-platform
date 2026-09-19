@@ -56,8 +56,31 @@ body {
   font-size: 14px !important;
   cursor: pointer !important;
   margin-top: 10px !important;
+  /* 3 BARIS INI KUNCI BIAR BISA DIKLIK DI HP */
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+/* WAJIB DITAMBAH: Buat ngebenerin dropdown pilih kamera depan/belakang */
+#qr-reader select {
+  padding: 8px 12px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  margin-bottom: 12px !important;
+  font-size: 14px !important;
+  width: 100% !important;
+  max-width: 300px !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 100 !important;
 }
 
 #qr-reader__dashboard_section_csr span {
   color: red !important;
+}
+
+/* Sembunyikan link 'Request Camera Permissions' bawaan yang suka tumpang tindih */
+#html5-qrcode-anchor-scan-type-change {
+  display: none !important;
 }
