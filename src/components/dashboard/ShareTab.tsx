@@ -447,6 +447,7 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
     }
 
     const filteredGuests = guests.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    const [previewImage, setPreviewImage] = useState<string | null>(null)
 
     return (
         <div className="h-full bg-stone-50 p-6 md:p-10 overflow-y-auto relative">
@@ -585,7 +586,12 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
                                                 {/* 1. BARIS NAMA, FOTO & CENTANG (Sudah digabung jadi satu) */}
                                                 <div className="flex items-center gap-2 mb-1">
                                                     {hasSelfieAddon && guest.selfie_url && (
-                                                        <img src={guest.selfie_url} alt="Selfie" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                                                        <img
+                                                            src={guest.selfie_url}
+                                                            alt="Selfie"
+                                                            onClick={() => setPreviewImage(guest.selfie_url!)}
+                                                            className="w-8 h-8 rounded-full object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                                        />
                                                     )}
                                                     <span className="font-bold text-gray-800 text-sm">{guest.name}</span>
                                                     {hasQrAddon && guest.is_checked_in && <CheckCircle2 className="w-4 h-4 text-green-500" />}
@@ -805,6 +811,29 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
                                 Jepret & Simpan
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL PREVIEW FOTO SELFIE */}
+            {previewImage && (
+                <div
+                    className="fixed inset-0 bg-black/90 z-[120] flex items-center justify-center p-4 cursor-pointer"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div className="relative w-full max-w-md flex flex-col items-center justify-center">
+                        <button
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute -top-12 right-0 p-2 bg-white/20 rounded-full text-white hover:bg-white/40 transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                        <img
+                            src={previewImage}
+                            alt="Preview Selfie"
+                            className="w-full max-h-[85vh] object-contain rounded-2xl cursor-default shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
                     </div>
                 </div>
             )}
