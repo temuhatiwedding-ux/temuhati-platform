@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
 import { Volume2, VolumeX, MapPin, Quote, } from 'lucide-react'
 import { InvitationData } from '@/types/invitation'
 import Guestbook from './Guestbook'
@@ -37,9 +38,23 @@ const VideoIcon = ({ className }: { className?: string }) => (
 export default function Elegan01({ data }: { data: InvitationData }) {
     const searchParams = useSearchParams()
     const guestName = searchParams.get('to') || 'Bapak/Ibu/Saudara/i'
+    const guestId = searchParams.get('id')
     const [isOpened, setIsOpened] = useState(false)
     const [isPlaying, setIsPlaying] = useState(true)
     const audioRef = useRef<HTMLAudioElement>(null)
+    const supabase = createClient()
+    useEffect(() => {
+        const markAsOpened = async () => {
+            if (guestId) {
+                await supabase
+                    .from('guest_list')
+                    .update({ is_opened: true })
+                    .eq('id', guestId)
+            }
+        }
+
+        markAsOpened()
+    }, [guestId]) // Akan jalan sekali saat halaman diload dan guestId terbaca
     const content = data.content_data || {}
     const defaultMusic = `${process.env.NEXT_PUBLIC_R2_URL}/master-music/laksana-surgaku.mp3`
     const musicUrl = content.musicUrl || defaultMusic

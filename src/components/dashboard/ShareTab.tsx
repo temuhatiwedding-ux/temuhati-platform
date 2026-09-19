@@ -215,7 +215,7 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
     }
 
     const getFormattedMessage = (guest: Guest) => {
-        const linkUndangan = `${baseInvitationUrl}?to=${encodeURIComponent(guest.name)}`
+        const linkUndangan = `${baseInvitationUrl}?to=${encodeURIComponent(guest.name)}&id=${guest.id}`
         const linkTiket = `${baseUrl}/tiket/${guest.id}`
 
         let finalMessage = messageTemplate
@@ -448,67 +448,113 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
 
     const filteredGuests = guests.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
     const [previewImage, setPreviewImage] = useState<string | null>(null)
-
     return (
-        <div className="h-full bg-stone-50 p-6 md:p-10 overflow-y-auto relative">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="h-full bg-[#FBFBF9] p-4 md:p-8 overflow-y-auto relative">
+            {/* KUNCI FULL SCREEN: Pakai max-w-[1400px] atau w-full, dan kecilin gap-nya */}
+            <div className="w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
 
                 {/* KIRI: Form & Template */}
                 <div className="space-y-6 lg:col-span-5">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Manajemen Tamu & QR</h2>
-                        <p className="text-sm text-gray-500 mt-1">Atur kuota, kirim undangan, dan pantau check-in.</p>
-                    </div>
 
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="font-semibold text-gray-800 mb-4 text-sm flex items-center gap-2">
-                            <Plus className="w-4 h-4" /> Tambah Tamu Baru
-                        </h3>
+
+                    {/* KARTU 1: TAMBAH TAMU */}
+                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#D1E0D7]">
+
+                            <h3 className="font-bold text-brand text-base">Tambah Tamu Baru</h3>
+                        </div>
+
                         <form onSubmit={addGuest} className="space-y-4">
                             <div>
-                                <label className="text-xs font-medium text-gray-600 block mb-1">Nama Tamu *</label>
-                                <input required type="text" value={newGuest} onChange={(e) => setNewGuest(e.target.value)} placeholder="Contoh: Budi Santoso" className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500" />
+                                <label className="block text-[11px] font-bold text-brand/60 mb-2 uppercase tracking-wider">Nama Tamu *</label>
+                                <input
+                                    required
+                                    type="text"
+                                    value={newGuest}
+                                    onChange={(e) => setNewGuest(e.target.value)}
+                                    placeholder="Contoh: Budi Santoso"
+                                    className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]"
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-xs font-medium text-gray-600 block mb-1">No. WA (Opsional)</label>
-                                    <input type="text" value={newWa} onChange={(e) => setNewWa(e.target.value)} placeholder="62812..." className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500" />
+                                    <label className="block text-[11px] font-bold text-brand/60 mb-2 uppercase tracking-wider">No. WA (Opsional)</label>
+                                    <input
+                                        type="text"
+                                        value={newWa}
+                                        onChange={(e) => setNewWa(e.target.value)}
+                                        placeholder="62812..."
+                                        className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]"
+                                    />
                                 </div>
                                 {/* HANYA MUNCUL JIKA PUNYA ADDON */}
                                 {hasQrAddon && (
                                     <div>
-                                        <label className="text-xs font-medium text-gray-600 block mb-1">Jatah Tamu (Pax)</label>
-                                        <input type="number" min="1" value={newPax} onChange={(e) => setNewPax(e.target.value === '' ? '' : parseInt(e.target.value))} className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500" />
+                                        <label className="block text-[11px] font-bold text-brand/60 mb-2 uppercase tracking-wider">Jatah (Pax)</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={newPax}
+                                            onChange={(e) => setNewPax(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                            className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]"
+                                        />
                                     </div>
                                 )}
                             </div>
-                            <button type="submit" className="w-full bg-stone-800 text-white p-2.5 rounded-lg text-sm font-semibold hover:bg-stone-900 transition-colors">
+                            <button
+                                type="submit"
+                                className="w-full mt-2 bg-[#3A4B40] text-white py-3.5 rounded-2xl text-sm font-bold hover:bg-[#2c3931] transition-all shadow-sm"
+                            >
                                 Simpan Tamu
                             </button>
                         </form>
                     </div>
 
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="font-semibold text-gray-800 text-sm">Template Pesan WA</h3>
-                            <select value={selectedTemplateId} onChange={handleTemplateChange} className="text-xs border border-gray-300 rounded-md p-1.5 focus:outline-none focus:border-stone-500 bg-gray-50">
+                    {/* KARTU 2: TEMPLATE PESAN WA */}
+                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-[#D1E0D7]">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white border border-[#D1E0D7] p-2.5 rounded-2xl">
+                                    <MessageCircle className="w-4 h-4 text-brand" />
+                                </div>
+                                <h3 className="font-bold text-brand text-base">Template Pesan WA</h3>
+                            </div>
+                            <select
+                                value={selectedTemplateId}
+                                onChange={handleTemplateChange}
+                                className="bg-white border border-[#D1E0D7] rounded-xl px-3 py-2.5 text-xs focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand transition-all duration-300 cursor-pointer font-medium hover:border-[#B5CDBF]"
+                            >
                                 {MESSAGE_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                 <option value="custom">Kustom</option>
                             </select>
                         </div>
-                        <textarea value={messageTemplate} onChange={(e) => { setMessageTemplate(e.target.value); setSelectedTemplateId('custom'); }} rows={6} className="w-full p-3 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500" />
+                        <div>
+                            <label className="block text-[11px] font-bold text-brand/60 mb-2 uppercase tracking-wider">Isi Pesan</label>
+                            <textarea
+                                value={messageTemplate}
+                                onChange={(e) => { setMessageTemplate(e.target.value); setSelectedTemplateId('custom'); }}
+                                rows={6}
+                                className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-4 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand transition-all duration-300 font-medium hover:border-[#B5CDBF] leading-relaxed"
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* KANAN: List Tamu & Tombol Scanner */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col lg:col-span-7 max-h-[calc(100vh-120px)]">
-                    <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                        <div className="flex flex-col gap-1">
-                            <h3 className="font-semibold text-gray-800 text-sm">Daftar Tamu</h3>
+                <div className="bg-[#F0F5F2] rounded-3xl border border-[#D1E0D7] shadow-sm overflow-hidden flex flex-col lg:col-span-7 max-h-[calc(100vh-120px)]">
+
+                    {/* Header List Tamu */}
+                    <div className="p-5 border-b border-[#D1E0D7] bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <h3 className="font-bold text-brand text-base">Daftar Tamu</h3>
                             <div className="flex gap-2">
-                                <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-bold">{guests.length} Total</span>
+                                <span className="text-[10px] bg-[#E8EFEA] text-[#3A4B40] px-2 py-1 rounded-md font-bold tracking-wide">
+                                    {guests.length} Total
+                                </span>
                                 {hasQrAddon && (
-                                    <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">{guests.filter(g => g.is_checked_in).length} Hadir</span>
+                                    <span className="text-[10px] bg-[#D4E8D9] text-[#2C3931] px-2 py-1 rounded-md font-bold tracking-wide">
+                                        {guests.filter(g => g.is_checked_in).length} Hadir
+                                    </span>
                                 )}
                             </div>
                         </div>
@@ -526,7 +572,7 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
                                                     window.location.reload()
                                                 }
                                             }}
-                                            className="flex-1 md:flex-none bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+                                            className="flex-1 md:flex-none bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
                                         >
                                             ✨ +Selfie
                                         </button>
@@ -535,7 +581,7 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
                                     {/* TOMBOL SCANNER */}
                                     <button
                                         onClick={() => setIsScannerOpen(true)}
-                                        className="flex-1 md:flex-none bg-[#3A4B40] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-[#2c3931] transition-colors"
+                                        className="flex-1 md:flex-none bg-[#3A4B40] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-[#2c3931] transition-all shadow-sm"
                                     >
                                         <Camera className="w-4 h-4" /> Buka Scanner
                                     </button>
@@ -550,7 +596,7 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
                                             window.location.reload()
                                         }
                                     }}
-                                    className="w-full md:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+                                    className="w-full md:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
                                 >
                                     🔒 Beli Fitur QR
                                 </button>
@@ -558,86 +604,92 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
                         </div>
                     </div>
 
-                    <div className="p-4 overflow-y-auto flex-1">
-                        <div className="p-4 border-b border-gray-100">
+                    {/* Area List & Pencarian */}
+                    <div className="p-5 overflow-y-auto flex-1">
+                        <div className="mb-5">
                             <input
                                 type="text"
                                 placeholder="Cari nama tamu..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full p-2.5 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500"
+                                className="w-full bg-white border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]"
                             />
                         </div>
+
                         {isLoading ? (
-                            <div className="text-center py-10 text-gray-500 text-sm">Memuat daftar tamu...</div>
+                            <div className="text-center py-10 text-brand/60 text-sm font-medium">Memuat daftar tamu...</div>
                         ) : guests.length === 0 ? (
-                            <div className="text-center py-10 text-gray-400">
-                                <Send className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                                <p className="text-sm">Belum ada tamu yang ditambahkan.</p>
+                            <div className="text-center py-12 text-brand/40">
+                                <Send className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                                <p className="text-sm font-medium">Belum ada tamu yang ditambahkan.</p>
                             </div>
-
                         ) : (
-
-                            <ul className="space-y-3">
+                            <ul className="space-y-2.5">
                                 {filteredGuests.map((guest) => (
-                                    <li key={guest.id} className="p-4 border border-gray-100 rounded-lg bg-gray-50 hover:bg-white transition-colors flex flex-col gap-3">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                {/* 1. BARIS NAMA, FOTO & CENTANG (Sudah digabung jadi satu) */}
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    {hasSelfieAddon && guest.selfie_url && (
-                                                        <img
-                                                            src={guest.selfie_url}
-                                                            alt="Selfie"
-                                                            onClick={() => setPreviewImage(guest.selfie_url!)}
-                                                            className="w-8 h-8 rounded-full object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                                                        />
-                                                    )}
-                                                    <span className="font-bold text-gray-800 text-sm">{guest.name}</span>
-                                                    {hasQrAddon && guest.is_checked_in && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                                                </div>
+                                    <li key={guest.id} className="p-3 border border-[#D1E0D7] rounded-xl bg-white hover:border-[#B5CDBF] transition-all flex flex-col gap-2.5 shadow-sm">
+                                        <div className="flex justify-between items-start gap-2">
 
-                                                {/* 2. BARIS BADGE STATUS WA & PAX */}
-                                                <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider">
-                                                    <span className={`px-2 py-0.5 rounded ${guest.is_sent ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>
-                                                        {guest.is_sent ? 'WA Terkirim' : 'Belum Dikirim'}
-                                                    </span>
+                                            {/* BAGIAN INFO TAMU */}
+                                            <div className="flex items-start gap-2.5">
+                                                {/* Foto Selfie (Mengecil jadi w-7 h-7) */}
+                                                {hasSelfieAddon && guest.selfie_url && (
+                                                    <img
+                                                        src={guest.selfie_url}
+                                                        alt="Selfie"
+                                                        onClick={() => setPreviewImage(guest.selfie_url!)}
+                                                        className="w-7 h-7 rounded-full object-cover border border-[#E8EFEA] cursor-pointer hover:opacity-80 mt-0.5 shrink-0"
+                                                    />
+                                                )}
 
-                                                    {hasQrAddon && (
-                                                        <div className="flex gap-1">
-                                                            <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                                                                Kuota: {guest.max_pax}
-                                                            </span>
-                                                            {guest.is_checked_in && (
-                                                                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded">
-                                                                    Hadir: {guest.actual_pax || 0}
+                                                <div className="flex flex-col">
+                                                    {/* Nama & Centang */}
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-bold text-brand text-sm leading-tight">{guest.name}</span>
+                                                        {hasQrAddon && guest.is_checked_in && <CheckCircle2 className="w-3.5 h-3.5 text-[#8BA896]" />}
+                                                    </div>
+
+                                                    {/* Badge Status (Dibikin lebih padat dan sebaris jika muat) */}
+                                                    <div className="flex flex-wrap items-center gap-1 mt-1 text-[9px] uppercase font-bold tracking-wider">
+                                                        <span className={`px-1.5 py-0.5 rounded-md ${guest.is_sent ? 'bg-[#D4E8D9] text-[#2C3931]' : 'bg-gray-100 text-gray-500'}`}>
+                                                            {guest.is_sent ? 'WA Terkirim' : 'Belum Dikirim'}
+                                                        </span>
+
+                                                        {hasQrAddon && (
+                                                            <>
+                                                                <span className="bg-[#FFF3CD] text-[#856404] px-1.5 py-0.5 rounded-md">
+                                                                    Pax: {guest.max_pax}
                                                                 </span>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                                {guest.is_checked_in && (
+                                                                    <span className="bg-[#D1E7DD] text-[#0F5132] px-1.5 py-0.5 rounded-md">
+                                                                        Hadir: {guest.actual_pax || 0}
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            {/* 3. TOMBOL HAPUS */}
-                                            <button onClick={() => removeGuest(guest.id)} className="text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded-md">
-                                                <Trash2 className="w-4 h-4" />
+                                            {/* TOMBOL HAPUS (Lebih minimalis) */}
+                                            <button onClick={() => removeGuest(guest.id)} className="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors shrink-0 mt-0.5">
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
 
-                                        {/* 4. TOMBOL AKSI BAWAH */}
-                                        <div className="flex gap-2 mt-2">
-                                            <button onClick={() => copyToClipboard(guest)} className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs py-2 rounded-lg shadow-sm hover:bg-gray-50 flex items-center justify-center gap-1.5 font-medium transition-all">
-                                                <Copy className="w-3.5 h-3.5" /> Copy Teks
+                                        {/* TOMBOL AKSI BAWAH (Dipersingkat tingginya py-1.5, teks text-[11px]) */}
+                                        <div className="flex gap-1.5">
+                                            <button onClick={() => copyToClipboard(guest)} className="flex-1 bg-[#FBFBF9] border border-[#D1E0D7] text-brand text-[11px] py-1.5 rounded-lg shadow-sm hover:bg-[#F0F5F2] flex items-center justify-center gap-1 font-bold transition-all">
+                                                <Copy className="w-3 h-3" /> Copy
                                             </button>
-                                            <button onClick={() => sendWhatsApp(guest)} className="flex-1 bg-[#25D366] text-white text-xs py-2 rounded-lg shadow-sm hover:bg-[#20b858] flex items-center justify-center gap-1.5 font-medium transition-all">
-                                                <MessageCircle className="w-3.5 h-3.5" /> Kirim WA
+                                            <button onClick={() => sendWhatsApp(guest)} className="flex-1 bg-[#25D366] text-white text-[11px] py-1.5 rounded-lg shadow-sm hover:bg-[#20b858] flex items-center justify-center gap-1 font-bold transition-all">
+                                                <MessageCircle className="w-3 h-3" /> WA
                                             </button>
                                             {hasQrAddon && !guest.is_checked_in && (
                                                 <button
                                                     onClick={() => { setManualGuest(guest); setManualPax(guest.max_pax); }}
-                                                    className="flex-1 bg-stone-800 text-white text-xs py-2 rounded-lg shadow-sm hover:bg-stone-900 flex items-center justify-center gap-1.5 font-medium transition-all"
+                                                    className="flex-1 bg-[#3A4B40] text-white text-[11px] py-1.5 rounded-lg shadow-sm hover:bg-[#2c3931] flex items-center justify-center gap-1 font-bold transition-all"
                                                 >
-                                                    <UserCheck className="w-3.5 h-3.5" /> Manual Checkin
+                                                    <UserCheck className="w-3 h-3" /> Hadir
                                                 </button>
                                             )}
                                         </div>

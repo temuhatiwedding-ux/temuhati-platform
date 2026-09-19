@@ -7,7 +7,7 @@ interface Comment {
     id: string;
     name: string;
     attendance: 'hadir' | 'tidak_hadir' | 'ragu';
-    guest_count?: number; // <-- Tambahan kolom jumlah tamu
+    guest_count?: number;
     message: string;
     created_at: string;
     admin_reply?: string;
@@ -41,109 +41,135 @@ export default function CommentsTab({ comments, isLoadingComments, onReply }: Co
     }
 
     return (
-        <div className="h-full bg-stone-50 p-6 md:p-10 overflow-y-auto">
-            <div className="max-w-4xl mx-auto">
-                <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900">Ucapan & Kehadiran</h2>
-                    <p className="text-sm text-gray-500 mt-1">Kelola pesan dan konfirmasi tamu.</p>
-                </div>
+        <div className="h-full bg-[#FBFBF9] p-4 md:p-8 overflow-y-auto relative">
+            <div className="w-full max-w-[1400px] mx-auto">
 
-                {/* Statistik diubah jadi 4 kolom */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-blue-50 text-blue-600 rounded-lg"><Users className="w-5 h-5" /></div>
-                        <div>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pesan</p>
-                            <p className="text-2xl font-bold text-gray-900">{total}</p>
-                        </div>
+                {/* HEADER */}
+                <div className="flex items-center gap-3 mb-7">
+                    <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-[#D1E0D7]">
+                        <MessageSquare className="w-4 h-4 text-brand" />
                     </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-green-50 text-green-600 rounded-lg"><CheckCircle className="w-5 h-5" /></div>
-                        <div>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Hadir</p>
-                            <p className="text-2xl font-bold text-gray-900">{hadir}</p>
-                        </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-teal-50 text-teal-600 rounded-lg"><UserPlus className="w-5 h-5" /></div>
-                        <div>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Tamu</p>
-                            <p className="text-2xl font-bold text-gray-900">{totalTamuHadir}</p>
-                        </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-red-50 text-red-600 rounded-lg"><XCircle className="w-5 h-5" /></div>
-                        <div>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Tdk Hadir</p>
-                            <p className="text-2xl font-bold text-gray-900">{tidakHadir}</p>
-                        </div>
+
+                    <div>
+                        <h2 className="text-[15px] font-semibold text-brand leading-tight">
+                            Ucapan & RSVP
+                        </h2>
+                        <p className="text-[11px] text-brand/55 mt-1">
+                            Kelola ucapan dan konfirmasi kehadiran tamu
+                        </p>
                     </div>
                 </div>
 
-                {/* Daftar Komentar */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+                {/* STATISTIK */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
+                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-5 flex items-center gap-4">
+                        <div className="p-3 bg-white border border-[#D1E0D7] text-brand rounded-2xl shrink-0"><Users className="w-5 h-5" /></div>
+                        <div>
+                            <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider leading-tight">Total Ucapan</p>
+                            <p className="text-2xl font-bold text-brand">{total}</p>
+                        </div>
+                    </div>
+                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-5 flex items-center gap-4">
+                        <div className="p-3 bg-white border border-[#D1E0D7] text-[#0F5132] rounded-2xl shrink-0"><CheckCircle className="w-5 h-5" /></div>
+                        <div>
+                            <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider leading-tight">RSVP Hadir</p>
+                            <p className="text-2xl font-bold text-brand">{hadir}</p>
+                        </div>
+                    </div>
+                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-5 flex items-center gap-4">
+                        <div className="p-3 bg-white border border-[#D1E0D7] text-[#2C3931] rounded-2xl shrink-0"><UserPlus className="w-5 h-5" /></div>
+                        <div>
+                            <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider leading-tight">Estimasi Tamu</p>
+                            <p className="text-2xl font-bold text-brand">{totalTamuHadir}</p>
+                        </div>
+                    </div>
+                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-5 flex items-center gap-4">
+                        <div className="p-3 bg-white border border-[#D1E0D7] text-[#842029] rounded-2xl shrink-0"><XCircle className="w-5 h-5" /></div>
+                        <div>
+                            <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider leading-tight">RSVP Absen</p>
+                            <p className="text-2xl font-bold text-brand">{tidakHadir}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* DAFTAR KOMENTAR */}
+                <div className="bg-white border border-[#D1E0D7] rounded-3xl shadow-sm overflow-hidden">
                     {isLoadingComments ? (
-                        <div className="p-10 text-center text-sm text-gray-500">Memuat data...</div>
+                        <div className="p-10 text-center text-sm text-brand/60 font-medium">Memuat data...</div>
                     ) : comments.length === 0 ? (
-                        <div className="p-16 text-center text-gray-400">
-                            <MessageSquare className="w-10 h-10 mx-auto mb-4 text-gray-300" />
-                            <p className="text-sm">Belum ada ucapan.</p>
+                        <div className="p-16 text-center text-brand/40">
+                            <MessageSquare className="w-10 h-10 mx-auto mb-4 opacity-50" />
+                            <p className="text-sm font-medium">Belum ada ucapan yang masuk.</p>
                         </div>
                     ) : (
-                        <ul className="divide-y divide-gray-100">
+                        <ul className="divide-y divide-[#D1E0D7]">
                             {comments.map((comment) => (
-                                <li key={comment.id} className="p-6">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <h4 className="font-semibold text-gray-900 text-sm">{comment.name}</h4>
-                                            <span className="text-xs text-gray-400">
+                                <li key={comment.id} className="p-4 hover:bg-[#FBFBF9] transition-colors">
+                                    {/* HEADER: Nama, Tanggal & Badge dibikin sejajar dan padat */}
+                                    <div className="flex justify-between items-start mb-1.5 gap-2">
+                                        <div className="flex flex-col">
+                                            <h4 className="font-bold text-brand text-sm leading-none mb-1">{comment.name}</h4>
+                                            <span className="text-[10px] text-brand/50 font-medium leading-none">
                                                 {new Date(comment.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
-                                        <div className="flex gap-2 items-center">
-                                            <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide ${comment.attendance === 'hadir' ? 'bg-green-100 text-green-700' :
-                                                    comment.attendance === 'tidak_hadir' ? 'bg-red-100 text-red-700' :
-                                                        'bg-gray-100 text-gray-700'
+                                        <div className="flex gap-1.5 items-center flex-wrap justify-end">
+                                            <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ${comment.attendance === 'hadir' ? 'bg-[#D1E7DD] text-[#0F5132]' :
+                                                comment.attendance === 'tidak_hadir' ? 'bg-[#F8D7DA] text-[#842029]' :
+                                                    'bg-[#FFF3CD] text-[#856404]'
                                                 }`}>
-                                                {comment.attendance === 'hadir' ? 'Hadir' : comment.attendance === 'tidak_hadir' ? 'Tidak Hadir' : 'Ragu'}
+                                                {comment.attendance === 'hadir' ? 'Hadir' : comment.attendance === 'tidak_hadir' ? 'Absen' : 'Ragu'}
                                             </span>
 
-                                            {/* Badge Jumlah Tamu */}
                                             {comment.attendance === 'hadir' && (
-                                                <span className="text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide bg-teal-100 text-teal-700">
-                                                    {comment.guest_count || 1} Orang
+                                                <span className="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-[#E8EFEA] text-[#3A4B40]">
+                                                    {comment.guest_count || 1} Pax
                                                 </span>
                                             )}
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-700 leading-relaxed mb-4">{comment.message}</p>
 
-                                    {/* Tampilan Balasan Admin */}
+                                    {/* PESAN */}
+                                    <p className="text-sm text-brand/80 leading-snug mb-2 font-medium">{comment.message}</p>
+
+                                    {/* BALASAN ADMIN & FORM BALAS */}
                                     {comment.admin_reply ? (
-                                        <div className="bg-stone-50 p-4 rounded-lg border border-stone-100 flex gap-3 mt-4">
-                                            <CornerDownRight className="w-4 h-4 text-stone-400 mt-0.5" />
+                                        <div className="bg-[#F0F5F2] p-3 rounded-xl border border-[#D1E0D7] flex gap-2.5 mt-2">
+                                            <CornerDownRight className="w-3.5 h-3.5 text-brand/40 mt-0.5 shrink-0" />
                                             <div>
-                                                <p className="text-xs font-semibold text-stone-700 mb-1">Balasan Anda:</p>
-                                                <p className="text-sm text-stone-600">{comment.admin_reply}</p>
+                                                <p className="text-[10px] font-bold text-brand/60 uppercase tracking-wider mb-0.5">Balasan Anda</p>
+                                                <p className="text-sm text-brand font-medium leading-snug">{comment.admin_reply}</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        /* Form Balas */
-                                        <div className="mt-2">
+                                        <div className="mt-1.5">
                                             {replyingTo === comment.id ? (
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-1.5">
                                                     <input
                                                         type="text"
                                                         value={replyText}
                                                         onChange={(e) => setReplyText(e.target.value)}
                                                         placeholder="Tulis balasan..."
-                                                        className="flex-1 text-sm p-2 border border-gray-300 rounded-md focus:outline-none focus:border-stone-500"
+                                                        className="flex-1 bg-[#FBFBF9] border border-[#D1E0D7] rounded-lg px-3 py-1.5 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[2px] focus:ring-[#8BA896]/20 outline-none text-brand transition-all duration-300 font-medium hover:border-[#B5CDBF]"
                                                     />
-                                                    <button onClick={() => handleReply(comment.id)} className="bg-stone-800 text-white px-4 py-2 text-xs rounded-md hover:bg-stone-900">Kirim</button>
-                                                    <button onClick={() => setReplyingTo(null)} className="bg-gray-100 text-gray-600 px-4 py-2 text-xs rounded-md hover:bg-gray-200">Batal</button>
+                                                    <button
+                                                        onClick={() => handleReply(comment.id)}
+                                                        className="bg-[#3A4B40] text-white px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-[#2c3931] transition-colors shadow-sm"
+                                                    >
+                                                        Kirim
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setReplyingTo(null)}
+                                                        className="bg-white border border-[#D1E0D7] text-brand px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-[#F0F5F2] transition-colors shadow-sm"
+                                                    >
+                                                        Batal
+                                                    </button>
                                                 </div>
                                             ) : (
-                                                <button onClick={() => setReplyingTo(comment.id)} className="text-xs text-stone-500 hover:text-stone-800 font-medium">
+                                                <button
+                                                    onClick={() => setReplyingTo(comment.id)}
+                                                    className="text-[10px] text-brand/50 hover:text-brand font-bold transition-colors uppercase tracking-wider"
+                                                >
                                                     Balas Pesan
                                                 </button>
                                             )}

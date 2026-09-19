@@ -10,6 +10,7 @@ import { Image as ImageIcon, Music, Heart, CalendarDays, Gift, Video, Type, Chec
 import CommentsTab from '@/components/dashboard/CommentsTab'
 import ShareTab from '@/components/dashboard/ShareTab'
 import Sidebar from '@/components/dashboard/Sidebar'
+import StatistikTab from '@/components/dashboard/StatistikTab'
 
 
 const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: boolean, hasClosingPhoto: boolean }> = {
@@ -1046,7 +1047,10 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                             hasSelfieAddon={initialData?.has_selfie_addon}
                         />
                     )}
-
+                    {/* LAYOUT STATISTIK */}
+                    {activeMenu === 'statistik' && (
+                        <StatistikTab slug={invitationSlug} />
+                    )}
                 </main>
             </div>
             {cropConfig && (

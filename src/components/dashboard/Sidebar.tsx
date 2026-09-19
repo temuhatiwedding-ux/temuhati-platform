@@ -30,12 +30,12 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeMenu, s
     `}
             >
                 <div className="h-[72px] flex items-center px-6">
-                    <h1 className="font-bold text-2xl tracking-tight text-brand flex items-center gap-2">
+                    <h1 className="font-bold text-2xl tracking-tight text-brand flex items-center gap-2.5">
+                        <img src="/icon.svg" alt="Logo" className="w-8 h-8 object-contain" />
                         TemuHati
                         <span className="w-1.5 h-1.5 rounded-full bg-brand/50 mt-1"></span>
                     </h1>
                 </div>
-
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto mt-2">
                     <button
                         onClick={() => { setActiveMenu('editor'); setIsSidebarOpen(false) }}
@@ -55,7 +55,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeMenu, s
                         onClick={() => { setActiveMenu('sebar'); setIsSidebarOpen(false) }}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${activeMenu === 'sebar' ? 'bg-brand text-brand-light shadow-md shadow-brand/20 translate-x-1' : 'text-brand/70 hover:bg-brand/5 hover:text-brand'}`}
                     >
-                        <Send className="w-5 h-5" /> Sebar Undangan
+                        <Send className="w-5 h-5" /> Guestbook
                     </button>
 
                     <button
@@ -65,13 +65,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeMenu, s
                         <BarChart2 className="w-5 h-5" /> Statistik
                     </button>
 
-                    <button
-                        onClick={() => { setActiveMenu('guestbook'); setIsSidebarOpen(false) }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${activeMenu === 'guestbook' ? 'bg-brand text-brand-light shadow-md shadow-brand/20 translate-x-1' : 'text-brand/40 cursor-not-allowed'}`}
-                        disabled
-                    >
-                        <Users className="w-5 h-5" /> Buku Tamu (Soon)
-                    </button>
+
                 </nav>
             </aside>
         </>
