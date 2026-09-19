@@ -1049,7 +1049,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                     )}
                     {/* LAYOUT STATISTIK */}
                     {activeMenu === 'statistik' && (
-                        <StatistikTab slug={invitationSlug} />
+                        <StatistikTab slug={invitationSlug} comments={comments} />
                     )}
                 </main>
             </div>
