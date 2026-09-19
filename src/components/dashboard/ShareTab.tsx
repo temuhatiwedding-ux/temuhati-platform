@@ -21,6 +21,7 @@ const MESSAGE_TEMPLATES = [
 
 interface ShareTabProps {
     slug: string;
+    hasQrAddon?: boolean; // Default false
 }
 
 interface Guest {
@@ -32,7 +33,7 @@ interface Guest {
     is_checked_in: boolean;
 }
 
-export default function ShareTab({ slug }: ShareTabProps) {
+export default function ShareTab({ slug, hasQrAddon = false }: ShareTabProps) {
     const supabase = createClient()
     const [guests, setGuests] = useState<Guest[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -201,11 +202,22 @@ export default function ShareTab({ slug }: ShareTabProps) {
     const getFormattedMessage = (guest: Guest) => {
         const linkUndangan = `${baseInvitationUrl}?to=${encodeURIComponent(guest.name)}`
         const linkTiket = `${baseUrl}/tiket/${guest.id}`
-        return messageTemplate
+
+        let finalMessage = messageTemplate
             .replace(/\[nama_tamu\]/g, guest.name)
             .replace(/\[link_undangan\]/g, linkUndangan)
-            .replace(/\[link_tiket\]/g, linkTiket)
             .replace(/\[nama_mempelai\]/g, getNamaMempelai())
+
+        // Hapus bagian tiket kalau tidak beli add-on
+        if (!hasQrAddon) {
+            finalMessage = finalMessage.replace(/🎫 \*Tiket Masuk & QR Code.*\[link_tiket\]\n\n/g, '')
+            finalMessage = finalMessage.replace(/🎫 \*Akses QR Code Check-in.*\[link_tiket\]\n\n/g, '')
+            finalMessage = finalMessage.replace(/\[link_tiket\]/g, '') // sapu bersih sisa tag
+        } else {
+            finalMessage = finalMessage.replace(/\[link_tiket\]/g, linkTiket)
+        }
+
+        return finalMessage
     }
 
     const markAsSent = async (id: string) => {
@@ -223,9 +235,26 @@ export default function ShareTab({ slug }: ShareTabProps) {
 
     const sendWhatsApp = (guest: Guest) => {
         const text = getFormattedMessage(guest)
-        const waUrl = guest.whatsapp
-            ? `https://wa.me/${guest.whatsapp}?text=${encodeURIComponent(text)}`
+
+        let formattedWa = guest.whatsapp || ''
+        if (formattedWa) {
+            // 1. Bersihkan karakter aneh (spasi, strip, tanda plus)
+            formattedWa = formattedWa.replace(/\D/g, '')
+
+            // 2. Ubah angka 0 di depan menjadi 62
+            if (formattedWa.startsWith('0')) {
+                formattedWa = '62' + formattedWa.substring(1)
+            }
+            // 3. Antisipasi kalau user ngetik langsung "852..." tanpa 0 atau 62
+            else if (formattedWa.startsWith('8')) {
+                formattedWa = '62' + formattedWa
+            }
+        }
+
+        const waUrl = formattedWa
+            ? `https://wa.me/${formattedWa}?text=${encodeURIComponent(text)}`
             : `https://wa.me/?text=${encodeURIComponent(text)}`
+
         window.open(waUrl, '_blank')
         if (!guest.is_sent) markAsSent(guest.id)
     }
@@ -288,10 +317,13 @@ export default function ShareTab({ slug }: ShareTabProps) {
                                     <label className="text-xs font-medium text-gray-600 block mb-1">No. WA (Opsional)</label>
                                     <input type="text" value={newWa} onChange={(e) => setNewWa(e.target.value)} placeholder="62812..." className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500" />
                                 </div>
-                                <div>
-                                    <label className="text-xs font-medium text-gray-600 block mb-1">Jatah Tamu (Pax)</label>
-                                    <input type="number" min="1" value={newPax} onChange={(e) => setNewPax(e.target.value === '' ? '' : parseInt(e.target.value))} className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500" />
-                                </div>
+                                {/* HANYA MUNCUL JIKA PUNYA ADDON */}
+                                {hasQrAddon && (
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-600 block mb-1">Jatah Tamu (Pax)</label>
+                                        <input type="number" min="1" value={newPax} onChange={(e) => setNewPax(e.target.value === '' ? '' : parseInt(e.target.value))} className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-stone-500" />
+                                    </div>
+                                )}
                             </div>
                             <button type="submit" className="w-full bg-stone-800 text-white p-2.5 rounded-lg text-sm font-semibold hover:bg-stone-900 transition-colors">
                                 Simpan Tamu
@@ -315,18 +347,44 @@ export default function ShareTab({ slug }: ShareTabProps) {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col lg:col-span-7 max-h-[calc(100vh-120px)]">
                     <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                         <div className="flex flex-col gap-1">
-                            <h3 className="font-semibold text-gray-800 text-sm">Daftar Kehadiran</h3>
+                            <h3 className="font-semibold text-gray-800 text-sm">Daftar Tamu</h3>
                             <div className="flex gap-2">
                                 <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-bold">{guests.length} Total</span>
-                                <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">{guests.filter(g => g.is_checked_in).length} Hadir</span>
+
+                                {/* HANYA MUNCUL JIKA PUNYA ADDON */}
+                                {hasQrAddon && (
+                                    <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">{guests.filter(g => g.is_checked_in).length} Hadir</span>
+                                )}
                             </div>
                         </div>
-                        <button
-                            onClick={() => setIsScannerOpen(true)}
-                            className="bg-[#3A4B40] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#2c3931] transition-colors"
-                        >
-                            <Camera className="w-4 h-4" /> Buka Scanner
-                        </button>
+
+                        {/* TOMBOL SCANNER VS TOMBOL UPGRADE */}
+                        {hasQrAddon ? (
+                            <button
+                                onClick={() => setIsScannerOpen(true)}
+                                className="bg-[#3A4B40] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#2c3931] transition-colors"
+                            >
+                                <Camera className="w-4 h-4" /> Buka Scanner
+                            </button>
+                        ) : (
+                            <button
+                                onClick={async () => {
+                                    // Simulasi Bypass Midtrans untuk Upgrade
+                                    const { error } = await supabase
+                                        .from('invitations')
+                                        .update({ has_qr_addon: true })
+                                        .eq('slug', slug)
+
+                                    if (!error) {
+                                        alert('Upgrade Sukses!')
+                                        window.location.reload() // Atau update state lokal biar tombolnya langsung berubah jadi Scanner
+                                    }
+                                }}
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2"
+                            >
+                                🔒 Beli Fitur QR (Upgrade)
+                            </button>
+                        )}
                     </div>
 
                     <div className="p-4 overflow-y-auto flex-1">
@@ -345,15 +403,20 @@ export default function ShareTab({ slug }: ShareTabProps) {
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="font-bold text-gray-800 text-sm">{guest.name}</span>
-                                                    {guest.is_checked_in && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                                                    {/* Centang hanya muncul kalau addon aktif & sudah checkin */}
+                                                    {hasQrAddon && guest.is_checked_in && <CheckCircle2 className="w-4 h-4 text-green-500" />}
                                                 </div>
                                                 <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider">
                                                     <span className={`px-2 py-0.5 rounded ${guest.is_sent ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>
                                                         {guest.is_sent ? 'WA Terkirim' : 'Belum Dikirim'}
                                                     </span>
-                                                    <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                                                        {guest.max_pax} Pax
-                                                    </span>
+
+                                                    {/* Badge Pax hanya muncul kalau addon aktif */}
+                                                    {hasQrAddon && (
+                                                        <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                                                            {guest.max_pax} Pax
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                             <button onClick={() => removeGuest(guest.id)} className="text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded-md">

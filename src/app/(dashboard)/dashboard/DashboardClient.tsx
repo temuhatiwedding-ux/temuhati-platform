@@ -112,10 +112,27 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
 
 
-    const handlePublish = async () => {
-        await supabase.from('invitations').update({ status: 'PUBLISHED' }).eq('slug', invitationSlug)
+    const handlePublish = async (isPremium: boolean) => {
+        const { error } = await supabase
+            .from('invitations') // Sesuaikan nama tabel lu
+            .update({
+                status: 'PUBLISHED',
+                has_qr_addon: isPremium
+            })
+            .eq('slug', invitationSlug)
+
+        if (error) {
+            alert('Gagal publish: ' + error.message)
+            return
+        }
+
         setInvitationStatus('PUBLISHED')
-        alert('Sukses! Undangan aktif (Bypass Midtrans)')
+
+        // Update state lokal biar UI Sebar Undangan (ShareTab) langsung berubah
+        // Sesuaikan dengan state formData / initialData lu
+        setFormData(prev => ({ ...prev, has_qr_addon: isPremium }))
+
+        alert(`Sukses! Undangan aktif (Paket: ${isPremium ? 'Premium + QR' : 'Basic'})`)
     }
 
     const toggleSection = (section: 'gallery') => {
@@ -482,8 +499,12 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                         </h3>
                                                         <p className="text-xs text-brand/60 mt-1">Selesaikan pembayaran untuk mengaktifkan link.</p>
                                                     </div>
-                                                    <button onClick={handlePublish} className="w-full sm:w-auto bg-brand text-brand-light px-5 py-2.5 rounded-full text-xs font-bold hover:bg-brand/90 transition-colors shadow-md shadow-brand/20">
-                                                        Bayar & Aktifkan
+                                                    <button onClick={() => handlePublish(false)} className="bg-blue-500 text-white p-2">
+                                                        Bypass: Beli Paket Basic (Tanpa QR)
+                                                    </button>
+
+                                                    <button onClick={() => handlePublish(true)} className="bg-orange-500 text-white p-2">
+                                                        Bypass: Beli Paket Premium (+QR)
                                                     </button>
                                                 </div>
                                             ) : (
@@ -1019,7 +1040,10 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
                     {/* LAYOUT SEBAR UNDANGAN */}
                     {activeMenu === 'sebar' && (
-                        <ShareTab slug={invitationSlug} />
+                        <ShareTab
+                            slug={invitationSlug}
+                            hasQrAddon={initialData?.has_qr_addon} // <--- Pakai initialData di sini
+                        />
                     )}
 
                 </main>
