@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import { Eye, EyeOff, Menu, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import LoadingIndicator from '@/components/ui/LoadingIndicator' // <--- IMPORT LOADING INDICATOR LU DI SINI
 
 function LoginContent() {
     const supabase = createClient()
@@ -267,9 +268,16 @@ function LoginContent() {
     )
 }
 
+// ================= PERUBAHAN DI SINI BRE =================
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FBFBF9] text-[#3A4B40] font-bold">Memuat...</div>}>
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center bg-[#FBFBF9]">
+                    <LoadingIndicator size={64} label="Memuat halaman..." color="#8BA896" />
+                </div>
+            }
+        >
             <LoginContent />
         </Suspense>
     )

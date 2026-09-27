@@ -6,18 +6,17 @@ import TemplateRenderer from '@/components/templates/TemplateRenderer'
 import imageCompression from 'browser-image-compression'
 import { Toaster, toast } from 'react-hot-toast'
 import ImageCropper from '@/components/dashboard/ImageCropper'
-import { Image as ImageIcon, Music, Heart, CalendarDays, Gift, Video, Type, CheckCircle, UploadCloud, X, ChevronUp, Save, Menu, MessageSquare, Send, Copy, ExternalLink, } from 'lucide-react'
+import { Image as ImageIcon, Music, Heart, CalendarDays, Gift, Video, Type, CheckCircle, UploadCloud, X, ChevronUp, Save, Menu, MessageSquare, Send, Copy, ExternalLink, LogOut } from 'lucide-react'
 import CommentsTab from '@/components/dashboard/CommentsTab'
 import ShareTab from '@/components/dashboard/ShareTab'
 import Sidebar from '@/components/dashboard/Sidebar'
 import StatistikTab from '@/components/dashboard/StatistikTab'
 
 
-const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: boolean, hasClosingPhoto: boolean }> = {
+const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: boolean, hasClosingPhoto: boolean, hasHeroSlideshow?: boolean }> = {
     'rustic-01': { name: 'Rustic Minimalist', hasCover: true, hasBg: false, hasClosingPhoto: false },
-    'modern-02': { name: 'Modern Full Image', hasCover: false, hasBg: true, hasClosingPhoto: true },
+    'modern-02': { name: 'Modern Full Image', hasCover: true, hasBg: false, hasClosingPhoto: true, hasHeroSlideshow: true }, // <-- Update baris ini
     'elegan-01': { name: 'Elegant Luxury', hasCover: true, hasBg: false, hasClosingPhoto: false },
-    // Tambahkan variasi desain lain di sini nanti
 }
 
 const PRESET_MUSIC = [
@@ -32,7 +31,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
     const [formData, setFormData] = useState({
 
         template_id: initialData?.template_id || '',
-
+        heroPhotos: initialData?.content_data?.heroPhotos || [],
         brideName: initialData?.bride_name || '',
         groomName: initialData?.groom_name || '',
         coverPhoto: initialData?.content_data?.coverPhoto || '',
@@ -59,6 +58,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         if (initialData) {
             setFormData({
                 template_id: initialData.template_id || 'rustic-01',
+                heroPhotos: initialData?.content_data?.heroPhotos || [],
                 brideName: initialData.bride_name || '',
                 groomName: initialData.groom_name || '',
                 coverPhoto: initialData.content_data?.coverPhoto || '',
@@ -86,6 +86,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
     const [saveStatus, setSaveStatus] = useState('Tersimpan')
     const [invitationSlug, setInvitationSlug] = useState('')
     const [invitationStatus, setInvitationStatus] = useState('DRAFT')
+    const [paymentStatus, setPaymentStatus] = useState(initialData?.payment_status || 'UNPAID')
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
     const [isUploadingMusic, setIsUploadingMusic] = useState(false)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -112,12 +113,12 @@ export default function DashboardClient({ user, initialData }: { user: any, init
     }
 
 
-
     const handlePublish = async (isPremium: boolean) => {
         const { error } = await supabase
-            .from('invitations') // Sesuaikan nama tabel lu
+            .from('invitations')
             .update({
                 status: 'PUBLISHED',
+                payment_status: 'PAID',
                 has_qr_addon: isPremium
             })
             .eq('slug', invitationSlug)
@@ -128,10 +129,14 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         }
 
         setInvitationStatus('PUBLISHED')
+        setPaymentStatus('PAID')
 
-        // Update state lokal biar UI Sebar Undangan (ShareTab) langsung berubah
-        // Sesuaikan dengan state formData / initialData lu
-        setFormData(prev => ({ ...prev, has_qr_addon: isPremium }))
+        // Update state lokal biar UI Sebar Undangan & Banner Status langsung berubah
+        setFormData(prev => ({
+            ...prev,
+            has_qr_addon: isPremium,
+
+        }))
 
         alert(`Sukses! Undangan aktif (Paket: ${isPremium ? 'Premium + QR' : 'Basic'})`)
     }
@@ -163,6 +168,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                 content_data: {
                     coverPhoto: formData.coverPhoto,
                     bgPhoto: formData.bgPhoto,
+                    heroPhotos: formData.heroPhotos,
                     closingPhoto: formData.closingPhoto,
                     musicUrl: formData.musicUrl,
                     quote: formData.quote,
@@ -225,21 +231,23 @@ export default function DashboardClient({ user, initialData }: { user: any, init
     }
 
     // 1. Fungsi untuk mencegat gambar dan membuka modal crop
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, field: string, index?: number) => {
         const file = e.target.files?.[0]
         if (!file) return
 
         let aspect = 3 / 4 // Default potret (Galeri, Cover)
-        if (field === 'bgPhoto') aspect = 9 / 16 // Fullscreen background
+        if (field === 'bgPhoto' || field === 'heroPhotos') aspect = 9 / 16 // Fullscreen background & Hero Slideshow
         if (field === 'closingPhoto') aspect = 1 / 1 // Bulat / Persegi
 
         const reader = new FileReader()
         reader.onload = () => {
-            setCropConfig({ src: reader.result as string, field, aspect })
+            // Lempar index ke cropConfig agar kita tahu foto ini untuk urutan ke berapa
+            setCropConfig({ src: reader.result as string, field, aspect, index })
         }
         reader.readAsDataURL(file)
-        e.target.value = '' // Reset agar bisa pilih file yang sama berulang kali
+        e.target.value = '' // Reset
     }
+
     const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -257,13 +265,19 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         if (!cropConfig) return
 
         const field = cropConfig.field
-        setCropConfig(null) // Tutup modal langsung
+        setCropConfig(null)
 
         const toastId = toast.loading('Mengupload gambar...')
 
         try {
             const isGallery = field === 'gallery'
-            const fileSuffix = isGallery ? `gallery-${user.id}-${cropConfig.index}` : `${field}-${user.id}`
+            const isHero = field === 'heroPhotos' // <-- Deteksi field heroPhotos
+
+            // Atur nama file suffix
+            const fileSuffix = isGallery ? `gallery-${user.id}-${cropConfig.index}` :
+                isHero ? `hero-${user.id}-${cropConfig.index}` :
+                    `${field}-${user.id}`
+
             const file = new File([croppedBlob], `${fileSuffix}.jpg`, { type: 'image/jpeg' })
 
             const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true, fileType: 'image/webp' }
@@ -271,7 +285,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
             const uploadData = new FormData()
             uploadData.append('file', compressedFile, `${fileSuffix}.webp`)
-            if (isGallery) uploadData.append('folder', 'gallery') // Tambahkan folder khusus galeri
+            if (isGallery || isHero) uploadData.append('folder', field) // Pakai nama field sebagai folder
 
             const response = await fetch('/api/upload', { method: 'POST', body: uploadData })
             const data = await response.json()
@@ -281,12 +295,20 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
                 if (isGallery && cropConfig.index !== undefined) {
                     setFormData(prev => {
-                        const currentPhotos = prev.sections.gallery.photos || []
-                        const newPhotos = [...currentPhotos]
+                        const newPhotos = [...(prev.sections.gallery.photos || [])]
                         newPhotos[cropConfig.index as number] = urlWithCacheBuster
                         return { ...prev, sections: { ...prev.sections, gallery: { ...prev.sections.gallery, photos: newPhotos } } }
                     })
-                } else {
+                }
+                // --- LOGIKA PENYIMPANAN HERO PHOTOS ---
+                else if (isHero && cropConfig.index !== undefined) {
+                    setFormData(prev => {
+                        const newPhotos = [...(prev.heroPhotos || [])]
+                        newPhotos[cropConfig.index as number] = urlWithCacheBuster
+                        return { ...prev, heroPhotos: newPhotos }
+                    })
+                }
+                else {
                     setFormData(prev => ({ ...prev, [field]: urlWithCacheBuster }))
                 }
 
@@ -394,10 +416,12 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         }
     }
 
-    // Panggil otomatis saat menu komentar dibuka
+    // Panggil otomatis saat Dashboard pertama kali dibuka
     useEffect(() => {
-        if (activeMenu === 'komentar') fetchComments()
-    }, [activeMenu])
+        if (user?.id) { // Asumsi lu pakai user.id buat filter di fetchComments
+            fetchComments()
+        }
+    }, [user?.id])
 
     return (
         <div className="flex h-[100dvh] bg-[#FBFBF9] overflow-hidden font-sans text-brand w-full relative">
@@ -409,6 +433,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                 setIsSidebarOpen={setIsSidebarOpen}
                 activeMenu={activeMenu}
                 setActiveMenu={setActiveMenu}
+                user={user}
             />
 
             {/* ================= MAIN CONTENT ================= */}
@@ -491,22 +516,27 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
                                         {/* ===================== STATUS BANNER ===================== */}
                                         <div className="mb-8">
-                                            {invitationStatus === 'DRAFT' ? (
+                                            {/* CEK KEDUA STATUSNYA DI SINI */}
+                                            {(invitationStatus === 'DRAFT' || paymentStatus === 'UNPAID') ? (
                                                 <div className="bg-brand-light border border-brand/10 rounded-3xl p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shadow-sm">
                                                     <div>
                                                         <h3 className="font-bold text-brand text-sm flex items-center gap-2">
                                                             <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                                                            Status: Draft
+                                                            {/* Ganti juga di sini */}
+                                                            Status: {paymentStatus === 'UNPAID' ? 'Menunggu Pembayaran' : 'Draft'}
                                                         </h3>
                                                         <p className="text-xs text-brand/60 mt-1">Selesaikan pembayaran untuk mengaktifkan link.</p>
                                                     </div>
-                                                    <button onClick={() => handlePublish(false)} className="bg-blue-500 text-white p-2">
-                                                        Bypass: Beli Paket Basic (Tanpa QR)
-                                                    </button>
 
-                                                    <button onClick={() => handlePublish(true)} className="bg-orange-500 text-white p-2">
-                                                        Bypass: Beli Paket Premium (+QR)
-                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => handlePublish(false)} className="bg-blue-500 text-white p-2 text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors">
+                                                            Bypass: Beli Paket Basic
+                                                        </button>
+
+                                                        <button onClick={() => handlePublish(true)} className="bg-orange-500 text-white p-2 text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors">
+                                                            Bypass: Beli Paket Premium
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ) : (
                                                 <div className="bg-[#F0F5F2] border border-[#D1E0D7] rounded-3xl p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shadow-sm">
@@ -639,6 +669,64 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                                     </button>
                                                                 </div>
                                                             )}
+                                                        </div>
+                                                    )}
+
+
+                                                    {/* Tampil hanya jika template butuh Hero Slideshow */}
+                                                    {activeConfig.hasHeroSlideshow && (
+                                                        <div className="mt-6 border-t border-[#D1E0D7] pt-6">
+                                                            <label className="block text-[11px] font-bold text-brand/60 mb-4 uppercase tracking-wider">
+                                                                Foto Slideshow Hero
+                                                            </label>
+
+                                                            {/* Grid Preview & Tambah Foto */}
+                                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+                                                                {(formData.heroPhotos || []).map((photo: string, index: number) => (
+                                                                    <div key={index} className="relative bg-white border border-[#D1E0D7] rounded-2xl overflow-hidden group shadow-sm aspect-[9/16]">
+                                                                        <img src={photo} alt={`Slideshow ${index + 1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+
+                                                                        {/* Tombol Hapus (Hover) ditaruh di pojok kanan atas */}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const newPhotos = [...(formData.heroPhotos || [])];
+                                                                                newPhotos.splice(index, 1);
+                                                                                setFormData(prev => ({ ...prev, heroPhotos: newPhotos }));
+                                                                            }}
+                                                                            className="absolute top-2 right-2 bg-red-50 text-red-600 hover:bg-red-100 p-1.5 rounded-xl shadow-sm transition-colors z-20 border border-red-100 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                                                        >
+                                                                            <X className="w-3.5 h-3.5" />
+                                                                        </button>
+
+                                                                        {/* Tombol Ganti ditaruh di bawah */}
+                                                                        <label className="absolute bottom-2 left-2 right-2 cursor-pointer text-brand text-[11px] bg-white/90 backdrop-blur-md py-1.5 rounded-xl text-center font-bold hover:bg-white transition-colors border border-white/50 shadow-sm z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                            Ganti
+                                                                            <input
+                                                                                type="file"
+                                                                                accept="image/*"
+                                                                                className="hidden"
+                                                                                onChange={(e) => handleImageSelect(e, 'heroPhotos', index)}
+                                                                            />
+                                                                        </label>
+                                                                    </div>
+                                                                ))}
+
+                                                                {/* Tombol Tambah Foto Baru */}
+                                                                {(formData.heroPhotos || []).length < 2 && (
+                                                                    <label className="flex flex-col items-center justify-center w-full aspect-[9/16] bg-white border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#FBFBF9] rounded-2xl cursor-pointer transition-all duration-300 group shadow-sm">
+                                                                        <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto</span>
+                                                                        <span className="text-[10px] text-brand/40 mt-1 text-center px-2">Maksimal 2 Foto (9:16)</span>
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="image/*"
+                                                                            className="hidden"
+                                                                            onChange={(e) => handleImageSelect(e, 'heroPhotos', (formData.heroPhotos || []).length)}
+                                                                        />
+                                                                    </label>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     )}
 
@@ -996,6 +1084,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                 content_data: {
                                                     coverPhoto: formData.coverPhoto,
                                                     bgPhoto: formData.bgPhoto,
+                                                    heroPhotos: formData.heroPhotos,
                                                     closingPhoto: formData.closingPhoto,
                                                     musicUrl: formData.musicUrl,
                                                     quote: formData.quote,

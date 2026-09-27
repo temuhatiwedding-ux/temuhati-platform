@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Quicksand } from "next/font/google";
+import { Quicksand, Playfair_Display } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
@@ -8,6 +8,13 @@ const quicksand = Quicksand({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-quicksand",
+});
+
+// Setup font Playfair Display untuk gaya serif mewah/editorial
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
@@ -23,13 +30,11 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${quicksand.variable} h-full antialiased`}
+      className={`${quicksand.variable} ${playfair.variable} h-full antialiased`}
     >
-      {/* Tambahkan font-sans dan warna background/teks dari logo di body */}
       <body className="min-h-full flex flex-col font-sans bg-[#FBFBF9] text-[#3A4B40]">
         <Toaster position="top-center" />
         {children}
-
       </body>
     </html>
   );

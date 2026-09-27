@@ -7,6 +7,7 @@ export interface InvitationData {
     content_data: {
         coverPhoto?: string;
         bgPhoto?: string;
+        heroPhotos?: string[];
         closingPhoto?: string;
         bridePhoto?: string;
         groomPhoto?: string;

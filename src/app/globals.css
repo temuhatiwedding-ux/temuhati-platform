@@ -1,16 +1,12 @@
 @import "tailwindcss";
 
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -83,4 +79,93 @@ body {
 /* Sembunyikan link 'Request Camera Permissions' bawaan yang suka tumpang tindih */
 #html5-qrcode-anchor-scan-type-change {
   display: none !important;
+}
+
+
+@keyframes coverFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cover-animate {
+  opacity: 0;
+  animation: coverFadeUp 0.7s ease-out forwards;
+}
+
+.cover-delay-150 {
+  animation-delay: 150ms;
+}
+
+.cover-delay-300 {
+  animation-delay: 300ms;
+}
+
+.cover-delay-500 {
+  animation-delay: 500ms;
+}
+
+@keyframes slideUpOut {
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.cover-exit {
+  animation: slideUpOut 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+/* Animasi gelembung/cahaya (Bokeh) */
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateY(-300px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.bokeh-particle {
+  position: absolute;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: floatUp linear infinite;
+}
+
+@keyframes cinematicReveal {
+  0% {
+    opacity: 0;
+    /* 1. Ganti translateY dengan translate3d untuk memaksa rendering via GPU */
+    transform: translate3d(0, 30px, 0) scale(0.95);
+    /* 2. Turunkan blur dari 10px ke 5px agar jauh lebih ringan tapi efeknya tetap ada */
+    filter: blur(5px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.dramatic-reveal {
+  opacity: 0;
+  /* 3. Tambahkan will-change agar browser bersiap mengalokasikan memori GPU */
+  will-change: opacity, transform, filter;
+  animation: cinematicReveal 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

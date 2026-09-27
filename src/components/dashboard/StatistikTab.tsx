@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BarChart2, Users, Send, CheckCircle, QrCode, MailOpen, MessageSquare, Loader2 } from 'lucide-react'
+import { BarChart2, Users, Send, CheckCircle, QrCode, MailOpen, MessageSquare, Lock } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
+import LoadingIndicator from '@/components/ui/LoadingIndicator'
 
-// 1. Samain tipe data Comment dengan yang ada di CommentsTab
 interface Comment {
     id: string;
     name: string;
@@ -15,16 +15,15 @@ interface Comment {
     admin_reply?: string;
 }
 
-// 2. Tambahin comments ke dalam Props
 interface StatistikTabProps {
     slug: string;
-    comments: Comment[]; // <--- TAMBAHAN BARU
+    comments: Comment[];
+    hasQrAddon?: boolean; // <--- BERDASARKAN DATABASE LU
 }
 
-export default function StatistikTab({ slug, comments }: StatistikTabProps) {
+export default function StatistikTab({ slug, comments, hasQrAddon = false }: StatistikTabProps) {
     const supabase = createClient()
 
-    // State ini sekarang cuma buat nyimpen data dari guest_list
     const [stats, setStats] = useState({
         totalUndangan: 0,
         terkirim: 0,
@@ -35,7 +34,7 @@ export default function StatistikTab({ slug, comments }: StatistikTabProps) {
 
     const [isLoading, setIsLoading] = useState(true)
 
-    // Hitung statistik komentar LANGSUNG dari props (Lebih cepat & sinkron 100%)
+    // Hitung statistik komentar LANGSUNG dari props
     const total_ucapan = comments.length
     const rsvp_hadir = comments.filter(c => c.attendance && c.attendance.toLowerCase() === 'hadir').length
     const rsvp_tidak = comments.filter(c => c.attendance && c.attendance.toLowerCase() === 'tidak_hadir').length
@@ -45,7 +44,6 @@ export default function StatistikTab({ slug, comments }: StatistikTabProps) {
         const fetchGuests = async () => {
             setIsLoading(true)
             try {
-                // Cuma nge-fetch Guest List aja
                 const { data: guests, error: errGuests } = await supabase
                     .from('guest_list')
                     .select('*')
@@ -79,11 +77,8 @@ export default function StatistikTab({ slug, comments }: StatistikTabProps) {
 
     if (isLoading) {
         return (
-            <div className="h-full bg-[#FBFBF9] flex items-center justify-center">
-                <div className="flex flex-col items-center text-brand/50">
-                    <Loader2 className="w-8 h-8 animate-spin mb-3 text-[#8BA896]" />
-                    <p className="text-sm font-bold uppercase tracking-wider">Menghitung Data...</p>
-                </div>
+            <div className="h-full w-full bg-[#FBFBF9] flex items-center justify-center">
+                <LoadingIndicator size={72} label="Menghitung Data..." color="#8BA896" />
             </div>
         )
     }
@@ -123,14 +118,23 @@ export default function StatistikTab({ slug, comments }: StatistikTabProps) {
                         <div className="p-3 bg-white border border-[#D1E0D7] text-[#0F5132] rounded-2xl shrink-0"><CheckCircle className="w-5 h-5" /></div>
                         <div>
                             <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider leading-tight">RSVP Hadir</p>
-                            <p className="text-2xl font-bold text-brand">{rsvp_hadir}</p> {/* PAKAI VARIABEL BARU */}
+                            <p className="text-2xl font-bold text-brand">{rsvp_hadir}</p>
                         </div>
                     </div>
-                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-5 flex items-center gap-4 hover:border-[#B5CDBF] transition-colors">
+
+                    {/* HIGHLIGHT CHECK-IN (DI GEMBOK KALAU BASIC) */}
+                    <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-5 flex items-center gap-4 hover:border-[#B5CDBF] transition-colors relative overflow-hidden group">
+                        {!hasQrAddon && (
+                            <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] flex items-center justify-center z-10">
+                                <span className="bg-[#3A4B40] text-white text-[9px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                                    <Lock className="w-3 h-3" /> Add-on
+                                </span>
+                            </div>
+                        )}
                         <div className="p-3 bg-white border border-[#D1E0D7] text-[#3A4B40] rounded-2xl shrink-0"><QrCode className="w-5 h-5" /></div>
-                        <div>
+                        <div className={!hasQrAddon ? "opacity-30" : ""}>
                             <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider leading-tight">Tamu Check-in</p>
-                            <p className="text-2xl font-bold text-brand">{stats.total_checkin}</p>
+                            <p className="text-2xl font-bold text-brand">{hasQrAddon ? stats.total_checkin : '?'}</p>
                         </div>
                     </div>
                 </div>
@@ -138,7 +142,7 @@ export default function StatistikTab({ slug, comments }: StatistikTabProps) {
                 {/* PROGRESS BAR & GRAFIK DETAIL */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* KARTU 1: Progress Penyebaran */}
+                    {/* KARTU 1: Progress Penyebaran (SELALU TERBUKA) */}
                     <div className="bg-white border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
                         <h3 className="font-bold text-brand text-sm mb-5 flex items-center gap-2">
                             <Users className="w-4 h-4" /> Progress Penyebaran WA
@@ -165,44 +169,62 @@ export default function StatistikTab({ slug, comments }: StatistikTabProps) {
                         </div>
                     </div>
 
-                    {/* KARTU 2: Kehadiran Fisik & Kuota */}
-                    <div className="bg-white border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
-                        <h3 className="font-bold text-brand text-sm mb-5 flex items-center gap-2">
-                            <QrCode className="w-4 h-4" /> Utilisasi Kuota Tamu (Check-in)
-                        </h3>
-                        <div className="flex items-center gap-6">
-                            <div className="relative w-28 h-28 rounded-full shrink-0 flex items-center justify-center bg-[#F0F5F2] shadow-inner"
-                                style={{ background: `conic-gradient(#3A4B40 ${persenCheckin}%, #F0F5F2 ${persenCheckin}%)` }}
-                            >
-                                <div className="w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
-                                    <span className="text-2xl font-bold text-brand leading-none">{persenCheckin}%</span>
+                    {/* KARTU 2: Kehadiran Fisik & Kuota (DI GEMBOK KALAU BASIC) */}
+                    <div className="bg-white border border-[#D1E0D7] shadow-sm rounded-3xl p-6 relative overflow-hidden">
+
+                        {!hasQrAddon && (
+                            <div className="absolute inset-0 bg-white/70 backdrop-blur-[3px] flex flex-col items-center justify-center z-20">
+                                <div className="w-12 h-12 rounded-full bg-[#E8EFEA] border border-[#D1E0D7] flex items-center justify-center text-[#3A4B40] shadow-sm mb-3">
+                                    <Lock className="w-5 h-5" />
                                 </div>
+                                <p className="text-sm font-bold text-brand mb-1">Fitur Add-on Terkunci</p>
+                                <p className="text-[11px] text-brand/60 font-medium px-8 text-center leading-relaxed">
+                                    Buka Add-on QR Scanner untuk memantau kehadiran aktual dan sisa kuota kursi acara.
+                                </p>
+                                <button className="mt-4 px-5 py-2 bg-[#3A4B40] text-white text-xs font-bold rounded-xl shadow-sm hover:bg-[#2C3931] transition-colors">
+                                    Upgrade Sekarang
+                                </button>
                             </div>
-                            <div className="flex-1 space-y-4">
-                                <div className="flex justify-between items-center border-b border-[#D1E0D7] pb-2">
-                                    <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider">Total Kuota</p>
-                                    <p className="text-sm font-bold text-brand">{stats.total_pax_kuota} Pax</p>
+                        )}
+
+                        <div className={!hasQrAddon ? "opacity-20 pointer-events-none filter blur-[1px] transition-all" : ""}>
+                            <h3 className="font-bold text-brand text-sm mb-5 flex items-center gap-2">
+                                <QrCode className="w-4 h-4" /> Utilisasi Kuota Tamu (Check-in)
+                            </h3>
+                            <div className="flex items-center gap-6">
+                                <div className="relative w-28 h-28 rounded-full shrink-0 flex items-center justify-center bg-[#F0F5F2] shadow-inner"
+                                    style={{ background: `conic-gradient(#3A4B40 ${persenCheckin}%, #F0F5F2 ${persenCheckin}%)` }}
+                                >
+                                    <div className="w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-2xl font-bold text-brand leading-none">{persenCheckin}%</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between items-center border-b border-[#D1E0D7] pb-2">
-                                    <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider">Tamu Hadir</p>
-                                    <p className="text-sm font-bold text-[#0F5132]">{stats.total_checkin} Pax</p>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider">Sisa Kuota</p>
-                                    <p className="text-sm font-bold text-[#842029]">{stats.total_pax_kuota - stats.total_checkin} Pax</p>
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex justify-between items-center border-b border-[#D1E0D7] pb-2">
+                                        <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider">Total Kuota</p>
+                                        <p className="text-sm font-bold text-brand">{stats.total_pax_kuota} Pax</p>
+                                    </div>
+                                    <div className="flex justify-between items-center border-b border-[#D1E0D7] pb-2">
+                                        <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider">Tamu Hadir</p>
+                                        <p className="text-sm font-bold text-[#0F5132]">{stats.total_checkin} Pax</p>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] text-brand/60 font-bold uppercase tracking-wider">Sisa Kuota</p>
+                                        <p className="text-sm font-bold text-[#842029]">{stats.total_pax_kuota - stats.total_checkin} Pax</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* KARTU 3: Detail RSVP & Komentar */}
+                    {/* KARTU 3: Detail RSVP & Komentar (SELALU TERBUKA) */}
                     <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-6 md:col-span-2">
                         <div className="flex justify-between items-center mb-5">
                             <h3 className="font-bold text-brand text-sm flex items-center gap-2">
                                 <MessageSquare className="w-4 h-4" /> Rangkuman RSVP Web
                             </h3>
                             <span className="bg-white border border-[#D1E0D7] px-3 py-1.5 rounded-xl text-[11px] uppercase tracking-wider font-bold text-brand shadow-sm">
-                                {total_ucapan} Total Ucapan {/* PAKAI VARIABEL BARU */}
+                                {total_ucapan} Total Ucapan
                             </span>
                         </div>
                         <div className="grid grid-cols-3 gap-4">
