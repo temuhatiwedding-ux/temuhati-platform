@@ -257,8 +257,8 @@ export default function Modern02({ data }: { data: InvitationData }) {
                 )}
 
                 {/* --- FOTO SLIDESHOW, BOKEH & OMBAK GELOMBANG --- */}
-                {/* 2. Ubah h-[55dvh] menjadi h-[55%] dan tambahkan shrink-0 */}
-                <div className="relative w-full h-[55%] shrink-0 overflow-hidden">
+                {/* Porsi foto kita besarkan jadi h-[68%] agar jauh lebih lega dan kepala tidak terpotong */}
+                <div className="relative w-full h-[68%] shrink-0 overflow-hidden">
 
                     <div
                         className="absolute top-0 right-0 w-full h-full flex flex-row-reverse transition-transform duration-[4000ms] ease-out"
@@ -294,19 +294,17 @@ export default function Modern02({ data }: { data: InvitationData }) {
                     )}
 
                     <div className="absolute -bottom-1 w-full z-20 leading-none">
-                        {/* Tambahkan preserveAspectRatio="none" dan ganti h-auto menjadi h-12 atau h-16 agar gelombang lebih ceper */}
-                        <svg viewBox="0 0 1440 320" preserveAspectRatio="none" className="w-full h-12 md:h-24 drop-shadow-sm">
+                        <svg viewBox="0 0 1440 320" preserveAspectRatio="none" className="w-full h-10 md:h-16 drop-shadow-sm">
                             <path fill="#ffffff" fillOpacity="1" d="M0,160L80,149.3C160,139,320,117,480,128C640,139,800,181,960,186.7C1120,192,1280,160,1360,144L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
                         </svg>
                     </div>
                 </div>
 
                 {/* --- TEKS HERO BAWAH --- */}
-                {/* 3. Ganti min-h-[45dvh] menjadi flex-1 (otomatis mengisi sisa layar), dan kurangi padding (py-12 -> py-6) agar teks tidak kepentok di HP layar kecil */}
-                <div className="relative z-30 flex-1 flex flex-col items-center justify-center w-full px-6 py-6 text-center bg-white overflow-hidden">
+                {/* Teks mengisi sisa 32%. Padding (py) dan Margin (mb) dipadatkan agar sangat compact */}
+                <div className="relative z-30 flex-1 flex flex-col items-center justify-center w-full px-4 py-2 text-center bg-white overflow-hidden">
 
                     {/* --- BACKGROUND BUNGA (Opacity 15% & FADE MASK) --- */}
-                    {/* maskImage membuat 25% bagian atas bunga memudar (fade-out) halus sehingga garis lurus batas kontainer hilang total */}
                     <div
                         className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none"
                         style={{
@@ -321,22 +319,23 @@ export default function Modern02({ data }: { data: InvitationData }) {
                         />
                     </div>
 
+                    {/* --- KONTEN TEKS COMPACT --- */}
                     <p
-                        className={`relative z-10 text-xs uppercase tracking-[0.2em] text-slate-500 mb-4 ${(isOpened || isExiting) ? 'dramatic-reveal' : 'opacity-0'}`}
+                        className={`relative z-10 text-[10px] md:text-xs uppercase tracking-[0.2em] text-slate-500 mb-2 ${(isOpened || isExiting) ? 'dramatic-reveal' : 'opacity-0'}`}
                         style={{ fontFamily: 'var(--font-playfair)', animationDelay: '400ms' }}
                     >
                         The Wedding of
                     </p>
 
                     <h2
-                        className={`relative z-10 text-4xl text-slate-600 mb-6 uppercase ${(isOpened || isExiting) ? 'dramatic-reveal' : 'opacity-0'}`}
+                        className={`relative z-10 text-3xl md:text-4xl text-slate-600 mb-2 uppercase ${(isOpened || isExiting) ? 'dramatic-reveal' : 'opacity-0'}`}
                         style={{ fontFamily: 'var(--font-playfair)', animationDelay: '800ms' }}
                     >
                         {data.groom_name} & {data.bride_name}
                     </h2>
 
                     <p
-                        className={`relative z-10 text-sm font-bold tracking-[0.1em] text-slate-700 ${(isOpened || isExiting) ? 'dramatic-reveal' : 'opacity-0'}`}
+                        className={`relative z-10 text-xs font-bold tracking-[0.1em] text-slate-700 ${(isOpened || isExiting) ? 'dramatic-reveal' : 'opacity-0'}`}
                         style={{ animationDelay: '1200ms' }}
                     >
                         {events?.akad?.date ? events.akad.date.split('-').reverse().join('. ') : 'TANGGAL BELUM DIATUR'}
