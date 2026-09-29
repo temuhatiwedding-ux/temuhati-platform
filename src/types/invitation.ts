@@ -13,6 +13,7 @@ export interface InvitationData {
         groomPhoto?: string;
         musicUrl?: string;
         quote?: string;
+        quote_source?: string;
         bride_details?: { fullName: string; order: string; fatherName: string; motherName: string; ig: string };
         groom_details?: { fullName: string; order: string; fatherName: string; motherName: string; ig: string };
         events?: {

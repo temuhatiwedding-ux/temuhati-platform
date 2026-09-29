@@ -36,8 +36,11 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         groomName: initialData?.groom_name || '',
         coverPhoto: initialData?.content_data?.coverPhoto || '',
         bgPhoto: initialData?.content_data?.bgPhoto || '',
+        bridePhoto: initialData?.content_data?.bridePhoto || '',
+        groomPhoto: initialData?.content_data?.groomPhoto || '',
         musicUrl: initialData?.content_data?.musicUrl || '',
         quote: initialData?.content_data?.quote || '',
+        quote_source: initialData?.content_data?.quote_source || '',
         bride_details: initialData?.content_data?.bride_details || { fullName: '', order: '', parents: '', ig: '' },
         groom_details: initialData?.content_data?.groom_details || { fullName: '', order: '', parents: '', ig: '' },
         events: initialData?.content_data?.events || {
@@ -61,10 +64,13 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                 heroPhotos: initialData?.content_data?.heroPhotos || [],
                 brideName: initialData.bride_name || '',
                 groomName: initialData.groom_name || '',
+                bridePhoto: initialData?.content_data?.bridePhoto || '',
+                groomPhoto: initialData?.content_data?.groomPhoto || '',
                 coverPhoto: initialData.content_data?.coverPhoto || '',
                 bgPhoto: initialData.content_data?.bgPhoto || '',
                 musicUrl: initialData.content_data?.musicUrl || '',
                 quote: initialData.content_data?.quote || '',
+                quote_source: initialData?.content_data?.quote_source || '',
                 bride_details: initialData.content_data?.bride_details || { fullName: '', order: '', parents: '', ig: '' },
                 groom_details: initialData.content_data?.groom_details || { fullName: '', order: '', parents: '', ig: '' },
                 events: initialData.content_data?.events || {
@@ -169,6 +175,8 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                     coverPhoto: formData.coverPhoto,
                     bgPhoto: formData.bgPhoto,
                     heroPhotos: formData.heroPhotos,
+                    bridePhoto: formData.bridePhoto,
+                    groomPhoto: formData.groomPhoto,
                     closingPhoto: formData.closingPhoto,
                     musicUrl: formData.musicUrl,
                     quote: formData.quote,
@@ -236,12 +244,22 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         if (!file) return
 
         let aspect = 3 / 4 // Default potret (Galeri, Cover)
-        if (field === 'bgPhoto' || field === 'heroPhotos') aspect = 9 / 16 // Fullscreen background & Hero Slideshow
-        if (field === 'closingPhoto') aspect = 1 / 1 // Bulat / Persegi
+
+        // Background full screen tetap 9:16
+        if (field === 'bgPhoto') aspect = 9 / 16
+
+        // Slideshow (Hero) di modern-02 tingginya 55dvh, rasio 3:4 jauh lebih aman biar nggak kepotong parah
+        if (field === 'heroPhotos') aspect = 3 / 4
+
+        // Mempelai pria & wanita pakai rasio 4:5 (Sesuai teks di UI form)
+        if (field === 'bridePhoto' || field === 'groomPhoto') aspect = 4 / 5
+
+        // Closing photo yang bentuknya bulat/kotak
+        if (field === 'closingPhoto') aspect = 1 / 1
 
         const reader = new FileReader()
         reader.onload = () => {
-            // Lempar index ke cropConfig agar kita tahu foto ini untuk urutan ke berapa
+            // Lempar index ke cropConfig agar kita tahu foto ini untuk urutan ke berapa (khusus array)
             setCropConfig({ src: reader.result as string, field, aspect, index })
         }
         reader.readAsDataURL(file)
@@ -602,6 +620,40 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     {/* Detail Wanita */}
                                                     <div className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
                                                         <h4 className="font-bold text-sm text-brand mb-1">Detail Wanita</h4>
+
+                                                        {/* Area Upload Foto Wanita */}
+                                                        <div className="flex items-center gap-4 mb-2">
+                                                            {formData.bridePhoto ? (
+                                                                <div className="relative w-20 aspect-[4/5] bg-white border border-[#D1E0D7] rounded-2xl overflow-hidden group shadow-sm shrink-0">
+                                                                    <img src={formData.bridePhoto} alt="Bride" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+
+                                                                    {/* Tombol Hapus */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setFormData(prev => ({ ...prev, bridePhoto: '' }))}
+                                                                        className="absolute top-1.5 right-1.5 bg-red-50 text-red-600 hover:bg-red-100 p-1 rounded-lg shadow-sm transition-colors z-20 border border-red-100 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                                                    >
+                                                                        <X className="w-3 h-3" />
+                                                                    </button>
+
+                                                                    {/* Tombol Ganti */}
+                                                                    <label className="absolute bottom-1.5 left-1.5 right-1.5 cursor-pointer text-brand text-[9px] bg-white/90 backdrop-blur-md py-1 rounded-lg text-center font-bold hover:bg-white transition-colors border border-white/50 shadow-sm z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                        Ganti
+                                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'bridePhoto')} />
+                                                                    </label>
+                                                                </div>
+                                                            ) : (
+                                                                <label className="relative flex flex-col items-center justify-center w-20 aspect-[4/5] bg-white border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#FBFBF9] rounded-2xl cursor-pointer transition-all duration-300 group shadow-sm shrink-0">
+                                                                    <span className="text-xl font-bold text-brand/40 mb-1 group-hover:text-brand transition-colors">+</span>
+                                                                    <span className="text-[9px] font-bold text-brand/60 uppercase tracking-wider group-hover:text-brand transition-colors">Foto</span>
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'bridePhoto')} />
+                                                                </label>
+                                                            )}
+                                                            <div className="flex-1 text-[10px] text-brand/60 font-medium leading-relaxed">
+                                                                Upload foto mempelai wanita.<br />Rasio disarankan <strong className="text-brand">4:5 (Potret)</strong>.
+                                                            </div>
+                                                        </div>
+
                                                         <input className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Nama Lengkap" value={formData.bride_details.fullName} onChange={(e) => updateNested('bride_details', 'fullName', e.target.value)} />
 
                                                         <div className="grid grid-cols-2 gap-3">
@@ -618,6 +670,40 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     {/* Detail Pria */}
                                                     <div className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
                                                         <h4 className="font-bold text-sm text-brand mb-1">Detail Pria</h4>
+
+                                                        {/* Area Upload Foto Pria */}
+                                                        <div className="flex items-center gap-4 mb-2">
+                                                            {formData.groomPhoto ? (
+                                                                <div className="relative w-20 aspect-[4/5] bg-white border border-[#D1E0D7] rounded-2xl overflow-hidden group shadow-sm shrink-0">
+                                                                    <img src={formData.groomPhoto} alt="Groom" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+
+                                                                    {/* Tombol Hapus */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setFormData(prev => ({ ...prev, groomPhoto: '' }))}
+                                                                        className="absolute top-1.5 right-1.5 bg-red-50 text-red-600 hover:bg-red-100 p-1 rounded-lg shadow-sm transition-colors z-20 border border-red-100 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                                                    >
+                                                                        <X className="w-3 h-3" />
+                                                                    </button>
+
+                                                                    {/* Tombol Ganti */}
+                                                                    <label className="absolute bottom-1.5 left-1.5 right-1.5 cursor-pointer text-brand text-[9px] bg-white/90 backdrop-blur-md py-1 rounded-lg text-center font-bold hover:bg-white transition-colors border border-white/50 shadow-sm z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                        Ganti
+                                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'groomPhoto')} />
+                                                                    </label>
+                                                                </div>
+                                                            ) : (
+                                                                <label className="relative flex flex-col items-center justify-center w-20 aspect-[4/5] bg-white border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#FBFBF9] rounded-2xl cursor-pointer transition-all duration-300 group shadow-sm shrink-0">
+                                                                    <span className="text-xl font-bold text-brand/40 mb-1 group-hover:text-brand transition-colors">+</span>
+                                                                    <span className="text-[9px] font-bold text-brand/60 uppercase tracking-wider group-hover:text-brand transition-colors">Foto</span>
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'groomPhoto')} />
+                                                                </label>
+                                                            )}
+                                                            <div className="flex-1 text-[10px] text-brand/60 font-medium leading-relaxed">
+                                                                Upload foto mempelai pria.<br />Rasio disarankan <strong className="text-brand">4:5 (Potret)</strong>.
+                                                            </div>
+                                                        </div>
+
                                                         <input className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Nama Lengkap" value={formData.groom_details.fullName} onChange={(e) => updateNested('groom_details', 'fullName', e.target.value)} />
 
                                                         <div className="grid grid-cols-2 gap-3">
@@ -684,7 +770,8 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
                                                                 {(formData.heroPhotos || []).map((photo: string, index: number) => (
-                                                                    <div key={index} className="relative bg-white border border-[#D1E0D7] rounded-2xl overflow-hidden group shadow-sm aspect-[9/16]">
+                                                                    // aspect-[9/16] diganti jadi aspect-[3/4]
+                                                                    <div key={index} className="relative bg-white border border-[#D1E0D7] rounded-2xl overflow-hidden group shadow-sm aspect-[3/4]">
                                                                         <img src={photo} alt={`Slideshow ${index + 1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
 
                                                                         {/* Tombol Hapus (Hover) ditaruh di pojok kanan atas */}
@@ -715,9 +802,11 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
                                                                 {/* Tombol Tambah Foto Baru */}
                                                                 {(formData.heroPhotos || []).length < 2 && (
-                                                                    <label className="flex flex-col items-center justify-center w-full aspect-[9/16] bg-white border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#FBFBF9] rounded-2xl cursor-pointer transition-all duration-300 group shadow-sm">
+                                                                    // aspect-[9/16] diganti jadi aspect-[3/4]
+                                                                    <label className="flex flex-col items-center justify-center w-full aspect-[3/4] bg-white border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#FBFBF9] rounded-2xl cursor-pointer transition-all duration-300 group shadow-sm">
                                                                         <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto</span>
-                                                                        <span className="text-[10px] text-brand/40 mt-1 text-center px-2">Maksimal 2 Foto (9:16)</span>
+                                                                        {/* Teks panduan diganti jadi 3:4 */}
+                                                                        <span className="text-[10px] text-brand/40 mt-1 text-center px-2">Maksimal 2 Foto (3:4)</span>
                                                                         <input
                                                                             type="file"
                                                                             accept="image/*"
@@ -779,15 +868,27 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     </div>
 
                                                     {/* Kutipan Pernikahan */}
-                                                    <div>
-                                                        <label className="block text-[11px] font-bold text-brand/60 mb-2 uppercase tracking-wider">Kutipan / Ayat Suci</label>
-                                                        <textarea
-                                                            className="w-full bg-white border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/30 transition-all duration-300 resize-none font-medium hover:border-[#B5CDBF] leading-relaxed"
-                                                            rows={4}
-                                                            value={formData.quote}
-                                                            onChange={(e) => setFormData({ ...formData, quote: e.target.value })}
-                                                            placeholder="Contoh: Dan di antara tanda-tanda kekuasaan-Nya..."
-                                                        />
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <label className="block text-[11px] font-bold text-brand/60 mb-2 uppercase tracking-wider">Kutipan / Ayat Suci</label>
+                                                            <textarea
+                                                                className="w-full bg-white border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/30 transition-all duration-300 resize-none font-medium hover:border-[#B5CDBF] leading-relaxed"
+                                                                rows={4}
+                                                                value={formData.quote}
+                                                                onChange={(e) => setFormData({ ...formData, quote: e.target.value })}
+                                                                placeholder="Contoh: Dan di antara tanda-tanda kekuasaan-Nya..."
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[11px] font-bold text-brand/60 mb-2 uppercase tracking-wider">Sumber Kutipan</label>
+                                                            <input
+                                                                type="text"
+                                                                className="w-full bg-white border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/30 transition-all duration-300 font-medium hover:border-[#B5CDBF]"
+                                                                value={formData.quote_source || ''}
+                                                                onChange={(e) => setFormData({ ...formData, quote_source: e.target.value })}
+                                                                placeholder="Contoh: (QS. Ar-Rum: 21) atau John Lennon"
+                                                            />
+                                                        </div>
                                                     </div>
 
                                                 </div>
@@ -1085,9 +1186,12 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     coverPhoto: formData.coverPhoto,
                                                     bgPhoto: formData.bgPhoto,
                                                     heroPhotos: formData.heroPhotos,
+                                                    bridePhoto: formData.bridePhoto,
+                                                    groomPhoto: formData.groomPhoto,
                                                     closingPhoto: formData.closingPhoto,
                                                     musicUrl: formData.musicUrl,
                                                     quote: formData.quote,
+                                                    quote_source: formData.quote_source,
                                                     bride_details: formData.bride_details,
                                                     groom_details: formData.groom_details,
                                                     events: formData.events,
