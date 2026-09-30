@@ -13,9 +13,9 @@ import Sidebar from '@/components/dashboard/Sidebar'
 import StatistikTab from '@/components/dashboard/StatistikTab'
 
 
-const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: boolean, hasClosingPhoto: boolean, hasHeroSlideshow?: boolean }> = {
+const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: boolean, hasClosingPhoto: boolean, hasHeroSlideshow?: boolean, hasLoveStoryPhoto?: boolean }> = {
     'rustic-01': { name: 'Rustic Minimalist', hasCover: true, hasBg: false, hasClosingPhoto: false },
-    'modern-02': { name: 'Modern Full Image', hasCover: true, hasBg: false, hasClosingPhoto: true, hasHeroSlideshow: true }, // <-- Update baris ini
+    'modern-02': { name: 'Modern Full Image', hasCover: true, hasBg: false, hasClosingPhoto: true, hasHeroSlideshow: true, hasLoveStoryPhoto: true },
     'elegan-01': { name: 'Elegant Luxury', hasCover: true, hasBg: false, hasClosingPhoto: false },
 }
 
@@ -38,21 +38,26 @@ export default function DashboardClient({ user, initialData }: { user: any, init
         bgPhoto: initialData?.content_data?.bgPhoto || '',
         bridePhoto: initialData?.content_data?.bridePhoto || '',
         groomPhoto: initialData?.content_data?.groomPhoto || '',
+        akadPhoto: initialData?.content_data?.akadPhoto || '',
+        loveStoryPhoto: initialData?.content_data?.loveStoryPhoto || '',
+        resepsiPhoto: initialData?.content_data?.resepsiPhoto || '',
         musicUrl: initialData?.content_data?.musicUrl || '',
         quote: initialData?.content_data?.quote || '',
         quote_source: initialData?.content_data?.quote_source || '',
         bride_details: initialData?.content_data?.bride_details || { fullName: '', order: '', parents: '', ig: '' },
         groom_details: initialData?.content_data?.groom_details || { fullName: '', order: '', parents: '', ig: '' },
-        events: initialData?.content_data?.events || {
-            akad: { date: '', time: '', location: '', mapUrl: '' },
-            resepsi: { date: '', time: '', location: '', mapUrl: '' }
+        events: initialData?.content_data?.events
+            || {
+
+            akad: { day: '', date: '', time: '', location: '', mapUrl: '' },
+            resepsi: { day: '', date: '', time: '', location: '', mapUrl: '' }
         },
         gift: initialData?.content_data?.gift || { enabled: true, banks: [{ name: '', account: '', holder: '' }] },
         love_story: initialData?.content_data?.love_story || { enabled: true, stories: [{ year: '', text: '' }] },
         live_stream: initialData?.content_data?.live_stream || { enabled: false, url: '' },
         closing_text: initialData?.content_data?.closing_text || '',
         closingPhoto: initialData?.content_data?.closingPhoto || '',
-        sections: initialData?.content_data?.sections || { gallery: { enabled: true, photos: [] } }
+        sections: initialData?.content_data?.sections || { gallery: { enabled: true, videoUrl: '', photos: [] } },
 
 
     })
@@ -66,23 +71,27 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                 groomName: initialData.groom_name || '',
                 bridePhoto: initialData?.content_data?.bridePhoto || '',
                 groomPhoto: initialData?.content_data?.groomPhoto || '',
+                akadPhoto: initialData?.content_data?.akadPhoto || '',
+                resepsiPhoto: initialData?.content_data?.resepsiPhoto || '',
                 coverPhoto: initialData.content_data?.coverPhoto || '',
                 bgPhoto: initialData.content_data?.bgPhoto || '',
+                loveStoryPhoto: initialData?.content_data?.loveStoryPhoto || '',
                 musicUrl: initialData.content_data?.musicUrl || '',
                 quote: initialData.content_data?.quote || '',
                 quote_source: initialData?.content_data?.quote_source || '',
                 bride_details: initialData.content_data?.bride_details || { fullName: '', order: '', parents: '', ig: '' },
                 groom_details: initialData.content_data?.groom_details || { fullName: '', order: '', parents: '', ig: '' },
-                events: initialData.content_data?.events || {
-                    akad: { date: '', time: '', location: '', mapUrl: '' },
-                    resepsi: { date: '', time: '', location: '', mapUrl: '' }
+                events: initialData?.content_data?.events || {
+
+                    akad: { day: '', date: '', time: '', location: '', mapUrl: '' },
+                    resepsi: { day: '', date: '', time: '', location: '', mapUrl: '' }
                 },
                 gift: initialData.content_data?.gift || { enabled: true, banks: [{ name: '', account: '', holder: '' }] },
                 love_story: initialData.content_data?.love_story || { enabled: true, stories: [{ year: '2020', text: 'Pertama kali bertemu' }] },
                 live_stream: initialData.content_data?.live_stream || { enabled: false, url: '' },
                 closing_text: initialData.content_data?.closing_text || '',
                 closingPhoto: initialData.content_data?.closingPhoto || '',
-                sections: initialData.content_data?.sections || { gallery: { enabled: true, photos: [] } }
+                sections: initialData?.content_data?.sections || { gallery: { enabled: true, videoUrl: '', photos: [] } },
             })
         }
     }, [initialData])
@@ -177,7 +186,10 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                     heroPhotos: formData.heroPhotos,
                     bridePhoto: formData.bridePhoto,
                     groomPhoto: formData.groomPhoto,
+                    akadPhoto: formData.akadPhoto,
+                    resepsiPhoto: formData.resepsiPhoto,
                     closingPhoto: formData.closingPhoto,
+                    loveStoryPhoto: formData.loveStoryPhoto,
                     musicUrl: formData.musicUrl,
                     quote: formData.quote,
                     bride_details: formData.bride_details,
@@ -256,6 +268,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
         // Closing photo yang bentuknya bulat/kotak
         if (field === 'closingPhoto') aspect = 1 / 1
+        if (field === 'loveStoryPhoto') aspect = 3 / 4;
 
         const reader = new FileReader()
         reader.onload = () => {
@@ -908,7 +921,29 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     <div className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
                                                         <h4 className="font-bold text-sm text-brand mb-1">Akad Nikah</h4>
 
-                                                        {/* Grid diubah: Hari full width, Tanggal & Jam berdampingan */}
+                                                        {/* --- UPLOAD FOTO AKAD --- */}
+                                                        <div className="mb-4">
+                                                            {formData.akadPhoto ? (
+                                                                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-[#D1E0D7] group">
+                                                                    <img src={formData.akadPhoto} alt="Foto Akad" className="w-full h-full object-cover" />
+                                                                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, akadPhoto: '' }))} className="absolute top-2 right-2 bg-red-50 text-red-600 p-1.5 rounded-xl shadow-sm z-20 hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                        <X className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <label className="absolute bottom-2 left-2 right-2 cursor-pointer text-brand text-[11px] bg-white/90 backdrop-blur-md py-1.5 rounded-xl text-center font-bold shadow-sm z-10 hover:bg-white transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                        Ganti Foto
+                                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'akadPhoto')} />
+                                                                    </label>
+                                                                </div>
+                                                            ) : (
+                                                                <label className="flex flex-col items-center justify-center w-full aspect-[4/3] bg-[#FBFBF9] border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#F0F5F2] rounded-2xl cursor-pointer transition-all duration-300 group">
+                                                                    <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto Akad</span>
+                                                                    <span className="text-[10px] text-brand/40 mt-1">Rasio 4:3 disarankan</span>
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'akadPhoto')} />
+                                                                </label>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Input Text Akad */}
                                                         <div className="grid grid-cols-2 gap-3">
                                                             <input type="text" className="col-span-2 w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Hari (Contoh: Jumat)" value={formData.events?.akad?.day || ''} onChange={(e) => updateEvent('akad', 'day', e.target.value)} />
                                                             <input type="date" className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-3 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" value={formData.events?.akad?.date || ''} onChange={(e) => updateEvent('akad', 'date', e.target.value)} />
@@ -923,7 +958,29 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     <div className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
                                                         <h4 className="font-bold text-sm text-brand mb-1">Resepsi</h4>
 
-                                                        {/* Grid diubah: Hari full width, Tanggal & Jam berdampingan */}
+                                                        {/* --- UPLOAD FOTO RESEPSI --- */}
+                                                        <div className="mb-4">
+                                                            {formData.resepsiPhoto ? (
+                                                                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-[#D1E0D7] group">
+                                                                    <img src={formData.resepsiPhoto} alt="Foto Resepsi" className="w-full h-full object-cover" />
+                                                                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, resepsiPhoto: '' }))} className="absolute top-2 right-2 bg-red-50 text-red-600 p-1.5 rounded-xl shadow-sm z-20 hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                        <X className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <label className="absolute bottom-2 left-2 right-2 cursor-pointer text-brand text-[11px] bg-white/90 backdrop-blur-md py-1.5 rounded-xl text-center font-bold shadow-sm z-10 hover:bg-white transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                        Ganti Foto
+                                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'resepsiPhoto')} />
+                                                                    </label>
+                                                                </div>
+                                                            ) : (
+                                                                <label className="flex flex-col items-center justify-center w-full aspect-[4/3] bg-[#FBFBF9] border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#F0F5F2] rounded-2xl cursor-pointer transition-all duration-300 group">
+                                                                    <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto Resepsi</span>
+                                                                    <span className="text-[10px] text-brand/40 mt-1">Rasio 4:3 disarankan</span>
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'resepsiPhoto')} />
+                                                                </label>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Input Text Resepsi */}
                                                         <div className="grid grid-cols-2 gap-3">
                                                             <input type="text" className="col-span-2 w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Hari (Contoh: Sabtu)" value={formData.events?.resepsi?.day || ''} onChange={(e) => updateEvent('resepsi', 'day', e.target.value)} />
                                                             <input type="date" className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-3 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" value={formData.events?.resepsi?.date || ''} onChange={(e) => updateEvent('resepsi', 'date', e.target.value)} />
@@ -937,23 +994,57 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                 </div>
                                             </div>
 
-                                            {/* KARTU 4: GALERI FOTO */}
+                                            {/* KARTU 4: GALERI FOTO & VIDEO */}
                                             <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
+
+                                                {/* HEADER CARD & TOGGLE */}
                                                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#D1E0D7]">
                                                     <div className="flex items-center gap-3">
                                                         <div className="bg-white border border-[#D1E0D7] p-2.5 rounded-2xl">
                                                             <ImageIcon className="w-4 h-4 text-brand" />
                                                         </div>
-                                                        <h3 className="font-bold text-brand text-base">Galeri Foto</h3>
+                                                        <h3 className="font-bold text-brand text-base">Galeri Foto & Video</h3>
                                                     </div>
                                                     <label className="flex items-center gap-2 text-[11px] font-bold text-brand cursor-pointer uppercase tracking-wider">
-                                                        <input type="checkbox" className="accent-brand w-4 h-4 rounded cursor-pointer" checked={formData.sections.gallery.enabled} onChange={(e) => setFormData(prev => ({ ...prev, sections: { ...prev.sections, gallery: { ...prev.sections.gallery, enabled: e.target.checked } } }))} />
+                                                        <input
+                                                            type="checkbox"
+                                                            className="accent-brand w-4 h-4 rounded cursor-pointer"
+                                                            checked={formData.sections.gallery.enabled}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, sections: { ...prev.sections, gallery: { ...prev.sections.gallery, enabled: e.target.checked } } }))}
+                                                        />
                                                         Aktifkan
                                                     </label>
                                                 </div>
+
+                                                {/* ISI FORM */}
                                                 <div className={`transition-all duration-300 ${!formData.sections.gallery.enabled ? 'opacity-40 pointer-events-none grayscale-[30%]' : ''}`}>
 
-                                                    {/* Grid Galeri */}
+                                                    {/* --- FORM VIDEO URL (OPSIONAL) --- */}
+                                                    <div className="space-y-3 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm mb-6">
+                                                        <h4 className="font-bold text-sm text-brand">Video Galeri (Opsional)</h4>
+                                                        <p className="text-[11px] text-brand/60 leading-relaxed">
+                                                            Masukkan link YouTube jika ada video prewedding. Kosongkan jika hanya ingin menampilkan foto.
+                                                        </p>
+                                                        <input
+                                                            type="text"
+                                                            className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]"
+                                                            placeholder="Contoh: https://www.youtube.com/watch?v=..."
+                                                            // Asumsikan lu nyimpen videoUrl di dalam sections.gallery
+                                                            value={formData.sections?.gallery?.videoUrl || ''}
+                                                            onChange={(e) => setFormData(prev => ({
+                                                                ...prev,
+                                                                sections: {
+                                                                    ...prev.sections,
+                                                                    gallery: {
+                                                                        ...prev.sections.gallery,
+                                                                        videoUrl: e.target.value
+                                                                    }
+                                                                }
+                                                            }))}
+                                                        />
+                                                    </div>
+
+                                                    {/* --- GRID GALERI FOTO --- */}
                                                     <div className="grid grid-cols-2 gap-3">
                                                         {(formData.sections.gallery.photos || []).map((photo: string, i: number) => (
                                                             <div key={i} className="relative bg-white border border-[#D1E0D7] rounded-2xl overflow-hidden group shadow-sm h-32">
@@ -986,8 +1077,11 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     </div>
                                                 </div>
                                             </div>
+
                                             {/* KARTU 5: LOVE STORY */}
                                             <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
+
+                                                {/* HEADER CARD & TOGGLE */}
                                                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#D1E0D7]">
                                                     <div className="flex items-center gap-3">
                                                         <div className="bg-white border border-[#D1E0D7] p-2.5 rounded-2xl">
@@ -996,48 +1090,92 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                         <h3 className="font-bold text-brand text-base">Love Story</h3>
                                                     </div>
                                                     <label className="flex items-center gap-2 text-[11px] font-bold text-brand cursor-pointer uppercase tracking-wider">
-                                                        <input type="checkbox" className="accent-brand w-4 h-4 rounded cursor-pointer" checked={formData.love_story.enabled} onChange={(e) => setFormData({ ...formData, love_story: { ...formData.love_story, enabled: e.target.checked } })} />
+                                                        <input
+                                                            type="checkbox"
+                                                            className="accent-brand w-4 h-4 rounded cursor-pointer"
+                                                            checked={formData.love_story.enabled}
+                                                            onChange={(e) => setFormData({ ...formData, love_story: { ...formData.love_story, enabled: e.target.checked } })}
+                                                        />
                                                         Aktifkan
                                                     </label>
                                                 </div>
 
+                                                {/* ISI FORM (Transparan jika dinonaktifkan) */}
                                                 <div className={`transition-all duration-300 ${!formData.love_story.enabled ? 'opacity-40 pointer-events-none grayscale-[30%]' : ''}`}>
-                                                    <div className="space-y-4 mb-6">
-                                                        {formData.love_story.stories.map((story: any, i: number) => (
-                                                            <div key={i} className="p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm space-y-3 relative group">
-                                                                <div className="flex items-center justify-between mb-1">
-                                                                    <h4 className="font-bold text-sm text-brand">Bagian Cerita {i + 1}</h4>
 
-                                                                    {/* Tombol Hapus: Hanya muncul jika form lebih dari 1 */}
-                                                                    {formData.love_story.stories.length > 1 && (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const newStories = formData.love_story.stories.filter((_: any, idx: number) => idx !== i);
-                                                                                setFormData((prev: any) => ({ ...prev, love_story: { ...prev.love_story, stories: newStories } }));
-                                                                            }}
-                                                                            className="text-[10px] font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition-colors border border-red-100"
-                                                                        >
-                                                                            Hapus
+                                                    {/* --- UPLOAD FOTO LOVE STORY (Berdasarkan Config) --- */}
+                                                    {TEMPLATE_CONFIG[formData.template_id]?.hasLoveStoryPhoto && (
+                                                        <div className="space-y-4 mb-6 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
+                                                            <h4 className="font-bold text-sm text-brand mb-1">Foto Utama Love Story</h4>
+                                                            <div className="mb-4">
+                                                                {formData.loveStoryPhoto ? (
+                                                                    <div className="relative w-full max-w-[200px] aspect-[3/4] rounded-2xl overflow-hidden border border-[#D1E0D7] group">
+                                                                        <img src={formData.loveStoryPhoto} alt="Foto Love Story" className="w-full h-full object-cover" />
+                                                                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, loveStoryPhoto: '' }))} className="absolute top-2 right-2 bg-red-50 text-red-600 p-1.5 rounded-xl shadow-sm z-20 hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                            <X className="w-3.5 h-3.5" />
                                                                         </button>
-                                                                    )}
-                                                                </div>
-
-                                                                <input
-                                                                    className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-bold hover:border-[#B5CDBF]"
-                                                                    placeholder="Tahun (Contoh: 2020 - Awal Bertemu)"
-                                                                    value={story.year}
-                                                                    onChange={(e) => updateStory(i, 'year', e.target.value)}
-                                                                />
-                                                                <textarea
-                                                                    className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 resize-none font-medium hover:border-[#B5CDBF] leading-relaxed"
-                                                                    rows={3}
-                                                                    placeholder="Ceritakan momen spesial kalian di sini..."
-                                                                    value={story.text}
-                                                                    onChange={(e) => updateStory(i, 'text', e.target.value)}
-                                                                />
+                                                                        <label className="absolute bottom-2 left-2 right-2 cursor-pointer text-brand text-[11px] bg-white/90 backdrop-blur-md py-1.5 rounded-xl text-center font-bold shadow-sm z-10 hover:bg-white transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                            Ganti Foto
+                                                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'loveStoryPhoto')} />
+                                                                        </label>
+                                                                    </div>
+                                                                ) : (
+                                                                    <label className="flex flex-col items-center justify-center w-full max-w-[200px] aspect-[3/4] bg-[#FBFBF9] border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#F0F5F2] rounded-2xl cursor-pointer transition-all duration-300 group">
+                                                                        <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto</span>
+                                                                        <span className="text-[10px] text-brand/40 mt-1">Rasio 3:4 disarankan</span>
+                                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'loveStoryPhoto')} />
+                                                                    </label>
+                                                                )}
                                                             </div>
-                                                        ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* --- LIST CERITA --- */}
+                                                    <div className="space-y-6 mb-6">
+                                                        {formData.love_story.stories.map((story: any, i: number) => {
+                                                            // Bikin array berisi default teks untuk placeholder dinamis
+                                                            const defaultYears = ["Awal Cerita", "Lamaran", "Pernikahan"];
+                                                            const defaultTexts = [
+                                                                "Berawal dari pertemuan sederhana, kami saling mengenal dan mulai berbagi banyak cerita...",
+                                                                "Dengan niat yang tulus dan restu keluarga, kami memutuskan untuk melangkah ke tahap yang lebih serius...",
+                                                                "Kini kami sampai pada hari yang kami nantikan, hari di mana dua hati dipersatukan..."
+                                                            ];
+
+                                                            return (
+                                                                <div key={i} className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm relative group">
+                                                                    <div className="flex items-center justify-between mb-1">
+                                                                        <h4 className="font-bold text-sm text-brand">Bagian Cerita {i + 1}</h4>
+                                                                        {formData.love_story.stories.length > 1 && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const newStories = formData.love_story.stories.filter((_: any, idx: number) => idx !== i);
+                                                                                    setFormData((prev: any) => ({ ...prev, love_story: { ...prev.love_story, stories: newStories } }));
+                                                                                }}
+                                                                                className="text-[10px] font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition-colors border border-red-100"
+                                                                            >
+                                                                                Hapus
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <input
+                                                                        className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]"
+                                                                        placeholder={`Contoh: ${defaultYears[i] || '2024 - Momen Spesial'}`}
+                                                                        value={story.year}
+                                                                        onChange={(e) => updateStory(i, 'year', e.target.value)}
+                                                                    />
+
+                                                                    <textarea
+                                                                        className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 resize-none font-medium hover:border-[#B5CDBF] leading-relaxed"
+                                                                        rows={3}
+                                                                        placeholder={`Contoh: ${defaultTexts[i] || 'Ceritakan momen spesial kalian di sini...'}`}
+                                                                        value={story.text}
+                                                                        onChange={(e) => updateStory(i, 'text', e.target.value)}
+                                                                    />
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
 
                                                     <button
@@ -1194,6 +1332,9 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     quote_source: formData.quote_source,
                                                     bride_details: formData.bride_details,
                                                     groom_details: formData.groom_details,
+                                                    loveStoryPhoto: formData.loveStoryPhoto,
+                                                    akadPhoto: formData.akadPhoto,
+                                                    resepsiPhoto: formData.resepsiPhoto,
                                                     events: formData.events,
                                                     gift: formData.gift,
                                                     love_story: formData.love_story,

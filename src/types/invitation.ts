@@ -11,20 +11,28 @@ export interface InvitationData {
         closingPhoto?: string;
         bridePhoto?: string;
         groomPhoto?: string;
+        resepsiPhoto?: string;
+        akadPhoto?: string;
+        loveStoryPhoto?: string;
         musicUrl?: string;
         quote?: string;
         quote_source?: string;
         bride_details?: { fullName: string; order: string; fatherName: string; motherName: string; ig: string };
         groom_details?: { fullName: string; order: string; fatherName: string; motherName: string; ig: string };
         events?: {
-            akad?: { date: string; time: string; location: string; mapUrl: string };
-            resepsi?: { date: string; time: string; location: string; mapUrl: string };
+
+            akad?: { day?: string; date: string; time: string; location: string; mapUrl: string };
+            resepsi?: { day?: string; date: string; time: string; location: string; mapUrl: string };
         };
         gift?: { enabled: boolean; banks: { name: string; account: string; holder: string }[] };
         live_stream?: { enabled: boolean; url: string };
         closing_text?: string;
         sections: {
-            gallery: { enabled: boolean; photos?: string[] };
+            gallery: {
+                enabled: boolean;
+                videoUrl?: string; // Jadikan opsional dengan tanda tanya (?)
+                photos?: string[];
+            };
         };
         love_story?: { enabled: boolean; stories: { year: string; text: string }[] };
     };
