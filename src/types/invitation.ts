@@ -24,7 +24,16 @@ export interface InvitationData {
             akad?: { day?: string; date: string; time: string; location: string; mapUrl: string };
             resepsi?: { day?: string; date: string; time: string; location: string; mapUrl: string };
         };
-        gift?: { enabled: boolean; banks: { name: string; account: string; holder: string }[] };
+        gift?: {
+            enabled: boolean;
+            banks: { name: string; account: string; holder: string }[];
+
+            physical?: {
+                recipientName?: string;
+                phone?: string;
+                address?: string;
+            };
+        };
         live_stream?: { enabled: boolean; url: string };
         closing_text?: string;
         sections: {
@@ -33,6 +42,13 @@ export interface InvitationData {
                 videoUrl?: string; // Jadikan opsional dengan tanda tanya (?)
                 photos?: string[];
             };
+        };
+        theme_colors?: {
+            primary: string;
+            secondary: string;
+            accent: string;
+            text: string;
+            textDark: string;
         };
         love_story?: { enabled: boolean; stories: { year: string; text: string }[] };
     };

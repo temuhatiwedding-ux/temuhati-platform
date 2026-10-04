@@ -6,17 +6,79 @@ import TemplateRenderer from '@/components/templates/TemplateRenderer'
 import imageCompression from 'browser-image-compression'
 import { Toaster, toast } from 'react-hot-toast'
 import ImageCropper from '@/components/dashboard/ImageCropper'
-import { Image as ImageIcon, Music, Heart, CalendarDays, Gift, Video, Type, CheckCircle, UploadCloud, X, ChevronUp, Save, Menu, MessageSquare, Send, Copy, ExternalLink, LogOut } from 'lucide-react'
+import { Image as ImageIcon, Music, Heart, CalendarDays, Gift, Video, Type, CheckCircle, UploadCloud, X, ChevronUp, Save, Menu, Palette, Send, Copy, ExternalLink, LogOut } from 'lucide-react'
 import CommentsTab from '@/components/dashboard/CommentsTab'
 import ShareTab from '@/components/dashboard/ShareTab'
 import Sidebar from '@/components/dashboard/Sidebar'
 import StatistikTab from '@/components/dashboard/StatistikTab'
 
 
-const TEMPLATE_CONFIG: Record<string, { name: string, hasCover: boolean, hasBg: boolean, hasClosingPhoto: boolean, hasHeroSlideshow?: boolean, hasLoveStoryPhoto?: boolean }> = {
+type ThemeColors = {
+    primary: string;
+    secondary: string;
+    accent: string;
+    text: string;
+    textDark: string;
+};
+
+const TEMPLATE_CONFIG: Record<string, {
+    name: string;
+    hasCover: boolean;
+    hasBg: boolean;
+    hasClosingPhoto: boolean;
+    hasHeroSlideshow?: boolean;
+    hasLoveStoryPhoto?: boolean;
+    hasSeparateEventPhotos?: boolean;
+    defaultColors?: ThemeColors;
+    colorPresets?: Array<{ name: string; colors: ThemeColors }>;
+}> = {
     'rustic-01': { name: 'Rustic Minimalist', hasCover: true, hasBg: false, hasClosingPhoto: false },
-    'modern-02': { name: 'Modern Full Image', hasCover: true, hasBg: false, hasClosingPhoto: true, hasHeroSlideshow: true, hasLoveStoryPhoto: true },
-    'elegan-01': { name: 'Elegant Luxury', hasCover: true, hasBg: false, hasClosingPhoto: false },
+    'modern-02': {
+        name: 'Minimalis Luxury 1',
+        hasCover: true,
+        hasBg: false,
+        hasClosingPhoto: false,
+        hasHeroSlideshow: true,
+        hasLoveStoryPhoto: true,
+        hasSeparateEventPhotos: true,
+
+        defaultColors: { primary: '#7B959A', secondary: '#F3F5F4', accent: '#D1E0D7', text: '#ffffff', textDark: '#2F3E40' },
+        colorPresets: [
+            { name: 'Teal', colors: { primary: '#7B959A', secondary: '#F3F5F4', accent: '#D1E0D7', text: '#ffffff', textDark: '#2F3E40' } },
+            { name: 'Sage Green', colors: { primary: '#8BA896', secondary: '#F0F5F2', accent: '#B5CDBF', text: '#ffffff', textDark: '#3A4A40' } },
+            { name: 'Dusty Blue', colors: { primary: '#6B8299', secondary: '#F0F3F5', accent: '#B2C2D1', text: '#ffffff', textDark: '#2A3742' } },
+            { name: 'Navy', colors: { primary: '#1B2A47', secondary: '#F0F2F5', accent: '#A3B1C6', text: '#ffffff', textDark: '#0B1320' } },
+            { name: 'Terracotta', colors: { primary: '#C07C66', secondary: '#FDF8F5', accent: '#E3C1B5', text: '#ffffff', textDark: '#4A2A20' } },
+            { name: 'Dusty Rose', colors: { primary: '#B88B8E', secondary: '#FBF5F6', accent: '#DBC3C5', text: '#ffffff', textDark: '#4A3335' } },
+            { name: 'Burgundy', colors: { primary: '#722F3E', secondary: '#F8F3F3', accent: '#C9A6AD', text: '#ffffff', textDark: '#3A151D' } },
+            { name: 'Chocolate', colors: { primary: '#654334', secondary: '#F7F4F2', accent: '#BCA89F', text: '#ffffff', textDark: '#2D1B13' } },
+            { name: 'Champagne', colors: { primary: '#C5A880', secondary: '#FDFBF7', accent: '#E3D5C1', text: '#ffffff', textDark: '#50412E' } },
+            { name: 'Charcoal', colors: { primary: '#222222', secondary: '#F8F8F8', accent: '#DDDDDD', text: '#ffffff', textDark: '#111111' } }
+        ]
+    },
+    'elegan-01': {
+        name: 'Elegant Luxury',
+        hasCover: true,
+        hasBg: false,
+        hasClosingPhoto: true,
+        hasHeroSlideshow: false,
+        hasLoveStoryPhoto: false,
+        hasSeparateEventPhotos: false,
+
+        defaultColors: { primary: '#7B959A', secondary: '#F3F5F4', accent: '#D1E0D7', text: '#ffffff', textDark: '#2F3E40' },
+        colorPresets: [
+            { name: 'Teal', colors: { primary: '#7B959A', secondary: '#F3F5F4', accent: '#D1E0D7', text: '#ffffff', textDark: '#2F3E40' } },
+            { name: 'Sage Green', colors: { primary: '#8BA896', secondary: '#F0F5F2', accent: '#B5CDBF', text: '#ffffff', textDark: '#3A4A40' } },
+            { name: 'Dusty Blue', colors: { primary: '#6B8299', secondary: '#F0F3F5', accent: '#B2C2D1', text: '#ffffff', textDark: '#2A3742' } },
+            { name: 'Navy', colors: { primary: '#1B2A47', secondary: '#F0F2F5', accent: '#A3B1C6', text: '#ffffff', textDark: '#0B1320' } },
+            { name: 'Terracotta', colors: { primary: '#C07C66', secondary: '#FDF8F5', accent: '#E3C1B5', text: '#ffffff', textDark: '#4A2A20' } },
+            { name: 'Dusty Rose', colors: { primary: '#B88B8E', secondary: '#FBF5F6', accent: '#DBC3C5', text: '#ffffff', textDark: '#4A3335' } },
+            { name: 'Burgundy', colors: { primary: '#722F3E', secondary: '#F8F3F3', accent: '#C9A6AD', text: '#ffffff', textDark: '#3A151D' } },
+            { name: 'Chocolate', colors: { primary: '#654334', secondary: '#F7F4F2', accent: '#BCA89F', text: '#ffffff', textDark: '#2D1B13' } },
+            { name: 'Champagne', colors: { primary: '#C5A880', secondary: '#FDFBF7', accent: '#E3D5C1', text: '#ffffff', textDark: '#50412E' } },
+            { name: 'Charcoal', colors: { primary: '#222222', secondary: '#F8F8F8', accent: '#DDDDDD', text: '#ffffff', textDark: '#111111' } }
+        ]
+    },
 }
 
 const PRESET_MUSIC = [
@@ -32,6 +94,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
         template_id: initialData?.template_id || '',
         heroPhotos: initialData?.content_data?.heroPhotos || [],
+        theme_colors: initialData?.content_data?.theme_colors || undefined,
         brideName: initialData?.bride_name || '',
         groomName: initialData?.groom_name || '',
         coverPhoto: initialData?.content_data?.coverPhoto || '',
@@ -61,12 +124,14 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
 
     })
+    const [isCustomColor, setIsCustomColor] = useState(false);
 
     useEffect(() => {
         if (initialData) {
             setFormData({
                 template_id: initialData.template_id || 'rustic-01',
                 heroPhotos: initialData?.content_data?.heroPhotos || [],
+                theme_colors: initialData?.content_data?.theme_colors || null,
                 brideName: initialData.bride_name || '',
                 groomName: initialData.groom_name || '',
                 bridePhoto: initialData?.content_data?.bridePhoto || '',
@@ -98,6 +163,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
     const [cropConfig, setCropConfig] = useState<{ src: string, field: string, aspect: number, index?: number } | null>(null)
     const activeConfig = TEMPLATE_CONFIG[formData.template_id] || TEMPLATE_CONFIG['rustic-01']
+    const hasSeparatePhotos = activeConfig.hasSeparateEventPhotos !== false;
     const [saveStatus, setSaveStatus] = useState('Tersimpan')
     const [invitationSlug, setInvitationSlug] = useState('')
     const [invitationStatus, setInvitationStatus] = useState('DRAFT')
@@ -177,10 +243,12 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                 .maybeSingle()
 
             const payload = {
+
                 template_id: formData.template_id,
                 bride_name: formData.brideName,
                 groom_name: formData.groomName,
                 content_data: {
+                    theme_colors: formData.theme_colors || null,
                     coverPhoto: formData.coverPhoto,
                     bgPhoto: formData.bgPhoto,
                     heroPhotos: formData.heroPhotos,
@@ -608,6 +676,89 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                 </select>
                                             </div>
 
+                                            {/* KARTU BARU: PENGATURAN WARNA */}
+                                            {TEMPLATE_CONFIG[formData.template_id || 'modern-02']?.colorPresets && (
+                                                <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
+                                                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#D1E0D7]">
+                                                        <div className="bg-white border border-[#D1E0D7] p-2.5 rounded-2xl">
+                                                            <Palette className="w-4 h-4 text-brand" />
+                                                        </div>
+                                                        <h3 className="font-bold text-brand text-base">Warna Tema</h3>
+                                                    </div>
+
+                                                    <div className="space-y-6">
+                                                        {/* 1. Tombol Preset Warna */}
+                                                        <div>
+                                                            <label className="block text-[11px] font-bold text-brand/60 mb-3 uppercase tracking-wider">Pilih Kombinasi Warna</label>
+                                                            <div className="flex flex-wrap gap-4">
+                                                                {TEMPLATE_CONFIG[formData.template_id || 'modern-02']?.colorPresets?.map((preset: any, idx: number) => {
+                                                                    // Cek apakah warna ini lagi dipilih
+                                                                    const activeColors = formData.theme_colors || TEMPLATE_CONFIG[formData.template_id || 'modern-02']?.defaultColors || {};
+                                                                    const isSelected = activeColors?.primary === preset.colors.primary && !isCustomColor;
+
+                                                                    return (
+                                                                        <button
+                                                                            key={idx}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setFormData({ ...formData, theme_colors: preset.colors });
+                                                                                setIsCustomColor(false);
+                                                                            }}
+                                                                            className={`group relative flex flex-col items-center gap-2 ${isSelected ? 'opacity-100' : 'opacity-50 hover:opacity-100'} transition-all duration-300`}
+                                                                        >
+                                                                            {/* Buat lingkaran yang nampilin 2 warna (Primary & Secondary) */}
+                                                                            <div className={`w-12 h-12 rounded-full overflow-hidden flex shadow-sm transition-transform duration-300 ${isSelected ? 'ring-2 ring-brand ring-offset-2 scale-110' : ''}`}>
+                                                                                <div className="w-1/2 h-full" style={{ backgroundColor: preset.colors.primary }}></div>
+                                                                                <div className="w-1/2 h-full" style={{ backgroundColor: preset.colors.secondary }}></div>
+                                                                            </div>
+                                                                            <span className="text-[10px] font-bold text-brand">{preset.name}</span>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* 2. Tombol Custom Manual (Opsional) */}
+                                                        <div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsCustomColor(!isCustomColor)}
+                                                                className="text-[10px] font-bold text-brand/60 hover:text-brand underline transition-colors"
+                                                            >
+                                                                {isCustomColor ? 'Tutup Pengaturan Manual' : '+ Atur Warna Manual (Advanced)'}
+                                                            </button>
+
+                                                            {/* Form Input Manual (Muncul kalau ditombol di atas diklik) */}
+                                                            {isCustomColor && (
+                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 mt-4 bg-white rounded-2xl border border-[#D1E0D7] animate-in fade-in slide-in-from-top-2 duration-300">
+                                                                    {['primary', 'secondary', 'accent', 'text', 'textDark'].map((key) => {
+                                                                        const activeColors = formData.theme_colors || TEMPLATE_CONFIG[formData.template_id || 'modern-02'].defaultColors;
+
+                                                                        return (
+                                                                            <div key={key} className="flex flex-col gap-2">
+                                                                                <label className="text-[10px] font-bold text-brand/60 uppercase tracking-wider">{key}</label>
+                                                                                <input
+                                                                                    type="color"
+                                                                                    value={(activeColors as any)[key] || '#000000'}
+                                                                                    onChange={(e) => setFormData({
+                                                                                        ...formData,
+                                                                                        theme_colors: {
+                                                                                            ...activeColors,
+                                                                                            [key]: e.target.value
+                                                                                        }
+                                                                                    })}
+                                                                                    className="w-full h-10 rounded-lg cursor-pointer border-0 p-0 shadow-sm"
+                                                                                />
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* KARTU 1: DATA MEMPELAI */}
                                             <div className="bg-[#F0F5F2] border border-[#D1E0D7] shadow-sm rounded-3xl p-6">
                                                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#D1E0D7]">
@@ -921,11 +1072,11 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     <div className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
                                                         <h4 className="font-bold text-sm text-brand mb-1">Akad Nikah</h4>
 
-                                                        {/* --- UPLOAD FOTO AKAD --- */}
+                                                        {/* --- UPLOAD FOTO AKAD / FOTO TUNGGAL --- */}
                                                         <div className="mb-4">
                                                             {formData.akadPhoto ? (
                                                                 <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-[#D1E0D7] group">
-                                                                    <img src={formData.akadPhoto} alt="Foto Akad" className="w-full h-full object-cover" />
+                                                                    <img src={formData.akadPhoto} alt={hasSeparatePhotos ? "Foto Akad" : "Foto Acara"} className="w-full h-full object-cover" />
                                                                     <button type="button" onClick={() => setFormData(prev => ({ ...prev, akadPhoto: '' }))} className="absolute top-2 right-2 bg-red-50 text-red-600 p-1.5 rounded-xl shadow-sm z-20 hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
                                                                         <X className="w-3.5 h-3.5" />
                                                                     </button>
@@ -936,7 +1087,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                                 </div>
                                                             ) : (
                                                                 <label className="flex flex-col items-center justify-center w-full aspect-[4/3] bg-[#FBFBF9] border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#F0F5F2] rounded-2xl cursor-pointer transition-all duration-300 group">
-                                                                    <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto Akad</span>
+                                                                    <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah {hasSeparatePhotos ? 'Foto Akad' : 'Foto Acara'}</span>
                                                                     <span className="text-[10px] text-brand/40 mt-1">Rasio 4:3 disarankan</span>
                                                                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'akadPhoto')} />
                                                                 </label>
@@ -958,27 +1109,29 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                     <div className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
                                                         <h4 className="font-bold text-sm text-brand mb-1">Resepsi</h4>
 
-                                                        {/* --- UPLOAD FOTO RESEPSI --- */}
-                                                        <div className="mb-4">
-                                                            {formData.resepsiPhoto ? (
-                                                                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-[#D1E0D7] group">
-                                                                    <img src={formData.resepsiPhoto} alt="Foto Resepsi" className="w-full h-full object-cover" />
-                                                                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, resepsiPhoto: '' }))} className="absolute top-2 right-2 bg-red-50 text-red-600 p-1.5 rounded-xl shadow-sm z-20 hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                                                                        <X className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <label className="absolute bottom-2 left-2 right-2 cursor-pointer text-brand text-[11px] bg-white/90 backdrop-blur-md py-1.5 rounded-xl text-center font-bold shadow-sm z-10 hover:bg-white transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                                                                        Ganti Foto
+                                                        {/* --- UPLOAD FOTO RESEPSI (CONDITIONAL RENDERING) --- */}
+                                                        {hasSeparatePhotos && (
+                                                            <div className="mb-4">
+                                                                {formData.resepsiPhoto ? (
+                                                                    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-[#D1E0D7] group">
+                                                                        <img src={formData.resepsiPhoto} alt="Foto Resepsi" className="w-full h-full object-cover" />
+                                                                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, resepsiPhoto: '' }))} className="absolute top-2 right-2 bg-red-50 text-red-600 p-1.5 rounded-xl shadow-sm z-20 hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                            <X className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <label className="absolute bottom-2 left-2 right-2 cursor-pointer text-brand text-[11px] bg-white/90 backdrop-blur-md py-1.5 rounded-xl text-center font-bold shadow-sm z-10 hover:bg-white transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                                                            Ganti Foto
+                                                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'resepsiPhoto')} />
+                                                                        </label>
+                                                                    </div>
+                                                                ) : (
+                                                                    <label className="flex flex-col items-center justify-center w-full aspect-[4/3] bg-[#FBFBF9] border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#F0F5F2] rounded-2xl cursor-pointer transition-all duration-300 group">
+                                                                        <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto Resepsi</span>
+                                                                        <span className="text-[10px] text-brand/40 mt-1">Rasio 4:3 disarankan</span>
                                                                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'resepsiPhoto')} />
                                                                     </label>
-                                                                </div>
-                                                            ) : (
-                                                                <label className="flex flex-col items-center justify-center w-full aspect-[4/3] bg-[#FBFBF9] border-2 border-dashed border-[#D1E0D7] hover:border-[#8BA896] hover:bg-[#F0F5F2] rounded-2xl cursor-pointer transition-all duration-300 group">
-                                                                    <span className="text-xs font-bold text-brand/60 group-hover:text-brand transition-colors">+ Tambah Foto Resepsi</span>
-                                                                    <span className="text-[10px] text-brand/40 mt-1">Rasio 4:3 disarankan</span>
-                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'resepsiPhoto')} />
-                                                                </label>
-                                                            )}
-                                                        </div>
+                                                                )}
+                                                            </div>
+                                                        )}
 
                                                         {/* Input Text Resepsi */}
                                                         <div className="grid grid-cols-2 gap-3">
@@ -1216,6 +1369,33 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                         </div>
                                                         <input className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-bold hover:border-[#B5CDBF]" placeholder="Atas Nama" value={formData.gift?.banks?.[1]?.holder || ''} onChange={(e) => updateNested('gift', 'banks', [formData.gift?.banks?.[0] || {}, { ...(formData.gift?.banks?.[1] || {}), holder: e.target.value }])} />
                                                     </div>
+
+                                                    {/* ALAMAT FISIK KADO (BARU) */}
+                                                    <div className="space-y-4 p-5 bg-white border border-[#D1E0D7] rounded-3xl shadow-sm">
+                                                        <h4 className="font-bold text-sm text-brand mb-1">Alamat Kirim Kado Fisik</h4>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <input
+                                                                className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-bold hover:border-[#B5CDBF]"
+                                                                placeholder="Nama Penerima"
+                                                                value={formData.gift?.physical?.recipientName || ''}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, gift: { ...prev.gift, physical: { ...prev.gift?.physical, recipientName: e.target.value } } }))}
+                                                            />
+                                                            <input
+                                                                className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-bold hover:border-[#B5CDBF]"
+                                                                placeholder="No. HP"
+                                                                value={formData.gift?.physical?.phone || ''}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, gift: { ...prev.gift, physical: { ...prev.gift?.physical, phone: e.target.value } } }))}
+                                                            />
+                                                        </div>
+                                                        <textarea
+                                                            className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-bold hover:border-[#B5CDBF] resize-none"
+                                                            placeholder="Alamat Lengkap (Contoh: Jl. Sudirman No. 12...)"
+                                                            rows={3}
+                                                            value={formData.gift?.physical?.address || ''}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, gift: { ...prev.gift, physical: { ...prev.gift?.physical, address: e.target.value } } }))}
+                                                        />
+                                                    </div>
+
                                                 </div>
                                             </div>
 
@@ -1254,35 +1434,38 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                 </div>
 
                                                 <div className="space-y-6">
-                                                    {/* Upload Foto Penutup */}
-                                                    <div>
-                                                        <label className="block text-[11px] font-bold text-brand/60 mb-3 uppercase tracking-wider">Foto Penutup (Bulat)</label>
-                                                        <div className="flex items-center gap-5">
-                                                            {formData.closingPhoto ? (
-                                                                <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md shrink-0 group">
-                                                                    <img src={formData.closingPhoto} alt="Closing" className="w-full h-full object-cover" />
-                                                                    <button type="button" onClick={() => setFormData({ ...formData, closingPhoto: '' })} className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <X className="w-6 h-6" />
-                                                                    </button>
-                                                                </div>
-                                                            ) : (
-                                                                <label className="w-20 h-20 rounded-full bg-white border-2 border-[#D1E0D7] border-dashed hover:border-[#8BA896] hover:bg-[#FBFBF9] flex items-center justify-center shrink-0 cursor-pointer transition-all duration-300 shadow-sm group">
-                                                                    <ImageIcon className="w-6 h-6 text-brand/40 group-hover:text-brand transition-colors" />
-                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'closingPhoto')} />
-                                                                </label>
-                                                            )}
-
-                                                            {!formData.closingPhoto && (
-                                                                <div className="flex-1">
-                                                                    <label className="cursor-pointer bg-white border border-[#D1E0D7] px-4 py-2.5 rounded-xl text-xs font-bold text-brand hover:bg-[#FBFBF9] hover:border-[#8BA896] transition-all duration-300 inline-block shadow-sm">
-                                                                        + Pilih Foto
+                                                    {/* Catatan: Sesuaikan kata 'config' dengan nama variabel config template lu (misal: activeConfig, templateConfig, dll) */}
+                                                    {/* 👇 BUNGKUS BAGIAN UPLOAD FOTO PAKAI CONFIG 👇 */}
+                                                    {TEMPLATE_CONFIG[formData.template_id || 'modern-02']?.hasClosingPhoto && (
+                                                        <div>
+                                                            <label className="block text-[11px] font-bold text-brand/60 mb-3 uppercase tracking-wider">Foto Penutup (Bulat)</label>
+                                                            <div className="flex items-center gap-5">
+                                                                {formData.closingPhoto ? (
+                                                                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md shrink-0 group">
+                                                                        <img src={formData.closingPhoto} alt="Closing" className="w-full h-full object-cover" />
+                                                                        <button type="button" onClick={() => setFormData({ ...formData, closingPhoto: '' })} className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <X className="w-6 h-6" />
+                                                                        </button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <label className="w-20 h-20 rounded-full bg-white border-2 border-[#D1E0D7] border-dashed hover:border-[#8BA896] hover:bg-[#FBFBF9] flex items-center justify-center shrink-0 cursor-pointer transition-all duration-300 shadow-sm group">
+                                                                        <ImageIcon className="w-6 h-6 text-brand/40 group-hover:text-brand transition-colors" />
                                                                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'closingPhoto')} />
                                                                     </label>
-                                                                    <p className="text-[10px] text-brand/50 mt-2 font-medium">Format 1:1 (Persegi/Bulat) agar hasil rapi.</p>
-                                                                </div>
-                                                            )}
+                                                                )}
+
+                                                                {!formData.closingPhoto && (
+                                                                    <div className="flex-1">
+                                                                        <label className="cursor-pointer bg-white border border-[#D1E0D7] px-4 py-2.5 rounded-xl text-xs font-bold text-brand hover:bg-[#FBFBF9] hover:border-[#8BA896] transition-all duration-300 inline-block shadow-sm">
+                                                                            + Pilih Foto
+                                                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, 'closingPhoto')} />
+                                                                        </label>
+                                                                        <p className="text-[10px] text-brand/50 mt-2 font-medium">Format 1:1 (Persegi/Bulat) agar hasil rapi.</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    )}
 
                                                     {/* Input Teks */}
                                                     <div>
@@ -1322,6 +1505,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                 isPreview: true,
                                                 content_data: {
                                                     coverPhoto: formData.coverPhoto,
+                                                    theme_colors: formData.theme_colors,
                                                     bgPhoto: formData.bgPhoto,
                                                     heroPhotos: formData.heroPhotos,
                                                     bridePhoto: formData.bridePhoto,
