@@ -152,7 +152,7 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                     resepsi: { day: '', date: '', time: '', location: '', mapUrl: '' }
                 },
                 gift: initialData.content_data?.gift || { enabled: true, banks: [{ name: '', account: '', holder: '' }] },
-                love_story: initialData.content_data?.love_story || { enabled: true, stories: [{ year: '2020', text: 'Pertama kali bertemu' }] },
+                love_story: initialData.content_data?.love_story || { enabled: true, stories: [{ year: '', text: '' }] },
                 live_stream: initialData.content_data?.live_stream || { enabled: false, url: '' },
                 closing_text: initialData.content_data?.closing_text || '',
                 closingPhoto: initialData.content_data?.closingPhoto || '',
@@ -730,25 +730,60 @@ export default function DashboardClient({ user, initialData }: { user: any, init
 
                                                             {/* Form Input Manual (Muncul kalau ditombol di atas diklik) */}
                                                             {isCustomColor && (
-                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 mt-4 bg-white rounded-2xl border border-[#D1E0D7] animate-in fade-in slide-in-from-top-2 duration-300">
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5 mt-4 bg-white rounded-2xl border border-[#D1E0D7] animate-in fade-in slide-in-from-top-2 duration-300">
                                                                     {['primary', 'secondary', 'accent', 'text', 'textDark'].map((key) => {
                                                                         const activeColors = formData.theme_colors || TEMPLATE_CONFIG[formData.template_id || 'modern-02'].defaultColors;
+                                                                        const currentColor = (activeColors as any)[key] || '#000000';
 
                                                                         return (
                                                                             <div key={key} className="flex flex-col gap-2">
                                                                                 <label className="text-[10px] font-bold text-brand/60 uppercase tracking-wider">{key}</label>
-                                                                                <input
-                                                                                    type="color"
-                                                                                    value={(activeColors as any)[key] || '#000000'}
-                                                                                    onChange={(e) => setFormData({
-                                                                                        ...formData,
-                                                                                        theme_colors: {
-                                                                                            ...activeColors,
-                                                                                            [key]: e.target.value
-                                                                                        }
-                                                                                    })}
-                                                                                    className="w-full h-10 rounded-lg cursor-pointer border-0 p-0 shadow-sm"
-                                                                                />
+
+                                                                                {/* Pembungkus Input Warna & Teks */}
+                                                                                <div className="flex items-center gap-3 bg-[#FBFBF9] border border-[#D1E0D7] p-1.5 rounded-xl focus-within:border-[#8BA896] focus-within:ring-[3px] focus-within:ring-[#8BA896]/20 transition-all">
+
+                                                                                    {/* Kotak Warna (Color Picker) */}
+                                                                                    <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 shadow-sm border border-black/10">
+                                                                                        <input
+                                                                                            type="color"
+                                                                                            value={currentColor}
+                                                                                            onChange={(e) => setFormData({
+                                                                                                ...formData,
+                                                                                                theme_colors: { ...activeColors, [key]: e.target.value }
+                                                                                            })}
+                                                                                            className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer border-0 p-0"
+                                                                                        />
+                                                                                    </div>
+
+                                                                                    {/* Input Teks HEX */}
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={currentColor.toUpperCase()}
+                                                                                        onChange={(e) => {
+                                                                                            const val = e.target.value;
+                                                                                            // Biarkan user ngetik, update state jika format valid atau sedang diketik
+                                                                                            setFormData({
+                                                                                                ...formData,
+                                                                                                theme_colors: { ...activeColors, [key]: val }
+                                                                                            });
+                                                                                        }}
+                                                                                        onBlur={(e) => {
+                                                                                            // Validasi saat user selesai ngetik (klik di luar kotak)
+                                                                                            const val = e.target.value;
+                                                                                            const isValidHex = /^#[0-9A-F]{6}$/i.test(val);
+                                                                                            if (!isValidHex) {
+                                                                                                // Kembalikan ke warna default jika input ngawur
+                                                                                                setFormData({
+                                                                                                    ...formData,
+                                                                                                    theme_colors: { ...activeColors, [key]: TEMPLATE_CONFIG[formData.template_id || 'modern-02'].defaultColors?.[key as keyof typeof TEMPLATE_CONFIG['modern-02']['defaultColors']] || '#000000' }
+                                                                                                });
+                                                                                            }
+                                                                                        }}
+                                                                                        maxLength={7}
+                                                                                        className="w-full bg-transparent text-sm font-bold text-brand outline-none uppercase placeholder:text-brand/30"
+                                                                                        placeholder="#000000"
+                                                                                    />
+                                                                                </div>
                                                                             </div>
                                                                         );
                                                                     })}

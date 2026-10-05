@@ -271,6 +271,19 @@ export default function Elegan01({ data }: { data: InvitationData }) {
         return dateStr;
     }
 
+    const calendarTitle = encodeURIComponent(`Pernikahan ${data.groom_name || 'Mempelai'} & ${data.bride_name || 'Mempelai'}`);
+    const calendarDetails = encodeURIComponent(`Kehadiran dan doa restu Anda sangat berarti bagi kami.`);
+    const calendarLocation = encodeURIComponent(events?.akad?.location || '');
+
+    let calendarDates = '';
+    if (events?.akad?.date) {
+        // Ubah "2024-12-31" jadi "20241231" sesuai standar Google Calendar
+        const formattedDate = events.akad.date.replace(/-/g, '');
+        calendarDates = `&dates=${formattedDate}/${formattedDate}`;
+    }
+
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${calendarTitle}&details=${calendarDetails}&location=${calendarLocation}${calendarDates}`;
+
     // --- RETURN UTAMA MULAI DI SINI ---
     return (
         <div
@@ -356,7 +369,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                         </p>
 
                         <a
-                            href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Pernikahan"
+                            href={calendarUrl}
                             target="_blank"
                             rel="noreferrer"
                             className={`bg-[color:var(--color-primary)] text-[color:var(--color-text)] font-semibold text-sm py-3 px-8 rounded-lg shadow-xl hover:opacity-80 transition-all duration-[1000ms] ease-out ${isOpened ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} delay-[1400ms]`}
@@ -821,7 +834,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                     className={`py-10 bg-[color:var(--color-secondary)] flex flex-col items-center justify-center border-t border-[color:var(--color-accent)] overflow-hidden transition-opacity ${showFooter ? 'dramatic-reveal' : 'opacity-0'}`}
                 >
                     <a
-                        href="https://instagram.com/temuhati"
+                        href="https://instagram.com/temuhati.kita"
                         target="_blank"
                         rel="noreferrer"
                         className="mb-3 text-[color:var(--color-primary)] opacity-80 hover:opacity-100 transition-opacity"
