@@ -5,7 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import { Eye, EyeOff, Menu, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import LoadingIndicator from '@/components/ui/LoadingIndicator' // <--- IMPORT LOADING INDICATOR LU DI SINI
+import LoadingIndicator from '@/components/ui/LoadingIndicator'
+import Link from 'next/link'
 
 function LoginContent() {
     const supabase = createClient()
@@ -85,13 +86,13 @@ function LoginContent() {
             {/* ================= HEADER / TOP BAR ================= */}
             <div className="absolute top-6 left-6 right-6 md:top-8 md:left-10 md:right-10 z-30 flex justify-between items-center">
 
-                {/* LOGO KIRI */}
-                <div className="flex items-center gap-3">
+                {/* LOGO KIRI - Sekarang bisa diklik untuk kembali ke halaman utama */}
+                <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                     <img src="/icon.svg" alt="TemuHati Logo" className="w-8 h-8 md:w-9 md:h-9 object-contain" />
                     <span className="font-bold text-xl md:text-2xl text-[#3A4B40] tracking-tight">
                         TemuHati
                     </span>
-                </div>
+                </Link>
 
                 {/* MENU KANAN (Desktop) */}
                 <div className="hidden md:flex items-center gap-6">
@@ -102,7 +103,7 @@ function LoginContent() {
                         Testimoni
                     </a>
 
-                    {/* Tombol Konsultasi WA (Simpel tanpa animasi) */}
+                    {/* Tombol Konsultasi WA */}
                     <a
                         href="https://wa.me/6285221011424"
                         target="_blank"
@@ -136,6 +137,13 @@ function LoginContent() {
             {/* ================= SISI KIRI: FORM ================= */}
             <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 md:px-16 lg:px-24 z-10 relative mt-16 md:mt-0">
                 <div className="w-full max-w-md">
+
+                    {/* TAMBAHAN: Tombol Kembali Eksplisit */}
+                    <Link href="/" className="inline-flex items-center gap-2 text-[13px] font-bold text-[#3A4B40]/50 hover:text-[#3A4B40] transition-colors mb-8">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Kembali ke Halaman Utama
+                    </Link>
+
                     <div className="mb-10 text-center md:text-left">
                         <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">
                             {isLogin ? 'Selamat Datang' : 'Buat Akun Baru'}
@@ -188,7 +196,6 @@ function LoginContent() {
                                 </button>
                             </div>
                         </div>
-
                         {isLogin && (
                             <div className="flex items-center justify-between pt-1 pb-2">
                                 <label className="flex items-center gap-2 text-xs font-bold text-[#3A4B40]/80 cursor-pointer">
@@ -208,9 +215,16 @@ function LoginContent() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-[#3A4B40] text-[#FBFBF9] py-4 rounded-2xl text-sm font-bold hover:bg-[#2C3931] transition-all duration-300 shadow-[0_8px_20px_rgba(58,75,64,0.2)] hover:shadow-[0_8px_25px_rgba(58,75,64,0.3)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 mt-2"
+                            className="w-full bg-[#3A4B40] text-[#FBFBF9] py-4 rounded-2xl text-sm font-bold hover:bg-[#2C3931] transition-all duration-300 shadow-[0_8px_20px_rgba(58,75,64,0.2)] hover:shadow-[0_8px_25px_rgba(58,75,64,0.3)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 mt-2 flex items-center justify-center gap-2"
                         >
-                            {loading ? 'Memproses...' : (isLogin ? 'Masuk ke Dashboard' : 'Daftar Sekarang')}
+                            {loading ? (
+                                <>
+                                    <LoadingIndicator size={20} color="#FBFBF9" />
+                                    Memproses...
+                                </>
+                            ) : (
+                                isLogin ? 'Masuk ke Dashboard' : 'Daftar Sekarang'
+                            )}
                         </button>
                     </form>
 
