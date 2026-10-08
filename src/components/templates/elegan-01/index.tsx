@@ -200,9 +200,22 @@ export default function Elegan01({ data }: { data: InvitationData }) {
 
     // --- HANDLER FUNCTIONS ---
     const toggleMusic = () => {
-        if (audioRef.current) {
-            isPlaying ? audioRef.current.pause() : audioRef.current.play()
-            setIsPlaying(!isPlaying)
+        if (!audioRef.current) return
+
+        // Cek status aslinya langsung dari elemen HTML (bukan dari state React)
+        if (audioRef.current.paused) {
+            const playPromise = audioRef.current.play()
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    setIsPlaying(true) // Update UI icon
+                }).catch(error => {
+                    console.warn("Gagal play manual:", error)
+                    setIsPlaying(false)
+                })
+            }
+        } else {
+            audioRef.current.pause()
+            setIsPlaying(false) // Update UI icon
         }
     }
 
@@ -329,7 +342,7 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                 {/* Audio Button */}
                 {musicUrl && (
                     <>
-                        <audio ref={audioRef} loop className="hidden" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)}>
+                        <audio ref={audioRef} loop className="hidden">
                             <source src={musicUrl} type="audio/mpeg" />
                         </audio>
                         <button
@@ -547,7 +560,11 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                             {events?.akad?.day ? `${events.akad.day}, ` : ''}{formatTanggal(events?.akad?.date)}
                         </p>
                         <p className="text-sm font-bold text-[color:var(--color-text-dark)] mb-4">PUKUL : {events?.akad?.time || '08:00 WIB'}</p>
-                        <p className="text-sm text-[color:var(--color-text-dark)]/70 leading-relaxed mb-6">{events?.akad?.location}</p>
+
+                        {/* 👇 Ditambahin whitespace-pre-line di sini */}
+                        <p className="text-sm text-[color:var(--color-text-dark)]/70 leading-relaxed mb-6 whitespace-pre-line text-center">
+                            {events?.akad?.location}
+                        </p>
 
                         {events?.akad?.mapUrl && (
                             <a
@@ -571,7 +588,11 @@ export default function Elegan01({ data }: { data: InvitationData }) {
                             {events?.resepsi?.day ? `${events.resepsi.day}, ` : ''}{formatTanggal(events?.resepsi?.date)}
                         </p>
                         <p className="text-sm font-bold text-[color:var(--color-text-dark)] mb-4">PUKUL : {events?.resepsi?.time || '10:00 WIB'} - Selesai</p>
-                        <p className="text-sm text-[color:var(--color-text-dark)]/70 leading-relaxed mb-6">{events?.resepsi?.location}</p>
+
+                        {/* 👇 Ditambahin whitespace-pre-line di sini juga */}
+                        <p className="text-sm text-[color:var(--color-text-dark)]/70 leading-relaxed mb-6 whitespace-pre-line text-center">
+                            {events?.resepsi?.location}
+                        </p>
 
                         {events?.resepsi?.mapUrl && (
                             <a

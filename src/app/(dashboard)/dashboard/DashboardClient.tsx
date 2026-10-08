@@ -56,6 +56,29 @@ const TEMPLATE_CONFIG: Record<string, {
             { name: 'Charcoal', colors: { primary: '#222222', secondary: '#F8F8F8', accent: '#DDDDDD', text: '#ffffff', textDark: '#111111' } }
         ]
     },
+    'modern-03': {
+        name: 'Minimalis Luxury 2',
+        hasCover: true,
+        hasBg: false,
+        hasClosingPhoto: false,
+        hasHeroSlideshow: true,
+        hasLoveStoryPhoto: true,
+        hasSeparateEventPhotos: true,
+
+        defaultColors: { primary: '#7B959A', secondary: '#F3F5F4', accent: '#D1E0D7', text: '#ffffff', textDark: '#2F3E40' },
+        colorPresets: [
+            { name: 'Teal', colors: { primary: '#7B959A', secondary: '#F3F5F4', accent: '#D1E0D7', text: '#ffffff', textDark: '#2F3E40' } },
+            { name: 'Sage Green', colors: { primary: '#8BA896', secondary: '#F0F5F2', accent: '#B5CDBF', text: '#ffffff', textDark: '#3A4A40' } },
+            { name: 'Dusty Blue', colors: { primary: '#6B8299', secondary: '#F0F3F5', accent: '#B2C2D1', text: '#ffffff', textDark: '#2A3742' } },
+            { name: 'Navy', colors: { primary: '#1B2A47', secondary: '#F0F2F5', accent: '#A3B1C6', text: '#ffffff', textDark: '#0B1320' } },
+            { name: 'Terracotta', colors: { primary: '#C07C66', secondary: '#FDF8F5', accent: '#E3C1B5', text: '#ffffff', textDark: '#4A2A20' } },
+            { name: 'Dusty Rose', colors: { primary: '#B88B8E', secondary: '#FBF5F6', accent: '#DBC3C5', text: '#ffffff', textDark: '#4A3335' } },
+            { name: 'Burgundy', colors: { primary: '#722F3E', secondary: '#F8F3F3', accent: '#C9A6AD', text: '#ffffff', textDark: '#3A151D' } },
+            { name: 'Chocolate', colors: { primary: '#654334', secondary: '#F7F4F2', accent: '#BCA89F', text: '#ffffff', textDark: '#2D1B13' } },
+            { name: 'Champagne', colors: { primary: '#C5A880', secondary: '#FDFBF7', accent: '#E3D5C1', text: '#ffffff', textDark: '#50412E' } },
+            { name: 'Charcoal', colors: { primary: '#222222', secondary: '#F8F8F8', accent: '#DDDDDD', text: '#ffffff', textDark: '#111111' } }
+        ]
+    },
     'elegan-01': {
         name: 'Elegant Luxury',
         hasCover: true,
@@ -1136,7 +1159,9 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                             <input type="time" className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-3 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" value={formData.events?.akad?.time || ''} onChange={(e) => updateEvent('akad', 'time', e.target.value)} />
                                                         </div>
 
-                                                        <input className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Lokasi (Contoh: Masjid Raya)" value={formData.events?.akad?.location || ''} onChange={(e) => updateEvent('akad', 'location', e.target.value)} />
+                                                        {/* 👇 UBAH INPUT LOKASI JADI TEXTAREA */}
+                                                        <textarea rows={3} className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF] resize-none" placeholder="Lokasi (Contoh: Masjid Raya)" value={formData.events?.akad?.location || ''} onChange={(e) => updateEvent('akad', 'location', e.target.value)} />
+
                                                         <input className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Link Google Maps" value={formData.events?.akad?.mapUrl || ''} onChange={(e) => updateEvent('akad', 'mapUrl', e.target.value)} />
                                                     </div>
 
@@ -1175,7 +1200,9 @@ export default function DashboardClient({ user, initialData }: { user: any, init
                                                             <input type="time" className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-3 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" value={formData.events?.resepsi?.time || ''} onChange={(e) => updateEvent('resepsi', 'time', e.target.value)} />
                                                         </div>
 
-                                                        <input className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Lokasi (Contoh: Gedung Serbaguna)" value={formData.events?.resepsi?.location || ''} onChange={(e) => updateEvent('resepsi', 'location', e.target.value)} />
+                                                        {/* 👇 UBAH INPUT LOKASI JADI TEXTAREA */}
+                                                        <textarea rows={3} className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF] resize-none" placeholder="Lokasi (Contoh: Gedung Serbaguna)" value={formData.events?.resepsi?.location || ''} onChange={(e) => updateEvent('resepsi', 'location', e.target.value)} />
+
                                                         <input className="w-full bg-[#FBFBF9] border border-[#D1E0D7] rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#8BA896] focus:ring-[3px] focus:ring-[#8BA896]/20 outline-none text-brand placeholder:text-brand/40 transition-all duration-300 font-medium hover:border-[#B5CDBF]" placeholder="Link Google Maps" value={formData.events?.resepsi?.mapUrl || ''} onChange={(e) => updateEvent('resepsi', 'mapUrl', e.target.value)} />
                                                     </div>
 

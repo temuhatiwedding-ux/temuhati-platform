@@ -80,11 +80,10 @@ export default function Modern02({ data }: { data: InvitationData }) {
     const handleCopy = (text: string, id: string) => {
         navigator.clipboard.writeText(text);
         setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000); // Reset tulisan "Copied" setelah 2 detik
+        setTimeout(() => setCopiedId(null), 2000);
     };
 
     useEffect(() => {
-        // Balikin threshold ke 0.2 karena sekarang kita pantau elemen yang ukurannya lebih kecil
         const observerOptions = { threshold: 0.2 };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -92,8 +91,6 @@ export default function Modern02({ data }: { data: InvitationData }) {
                     if (entry.target.id === 'countdown-sec') setShowCountdown(true);
                     if (entry.target.id === 'groom-sec') setShowGroom(true);
                     if (entry.target.id === 'bride-sec') setShowBride(true);
-
-                    // --- Tambahkan pengecekan untuk 3 elemen baru ---
                     if (entry.target.id === 'event-header') setShowEventHeader(true);
                     if (entry.target.id === 'akad-card') setShowAkadCard(true);
                     if (entry.target.id === 'resepsi-card') setShowResepsiCard(true);
@@ -669,10 +666,13 @@ export default function Modern02({ data }: { data: InvitationData }) {
                             <hr className="border-slate-400 mb-4" />
                             <p className="text-[10px] text-slate-600 mb-4 font-medium">Pukul : {events?.akad?.time || '08.00 WIB'}</p>
                             <h4 className="text-[color:var(--color-primary)] text-sm font-bold mb-2">Lokasi Acara</h4>
+
+                            {/* 👇 Bagian Lokasi Ditambahin whitespace-pre-line */}
                             <p className="text-[10px] text-slate-600 mb-6 leading-relaxed">
-                                <span className="font-bold">Tempat : </span>
-                                {events?.akad?.location || 'Kediaman Mempelai Wanita, Ds Pagu, Wates, Kediri, Jawa Timur'}
+                                <span className="font-bold block mb-1">Tempat : </span>
+                                <span className="whitespace-pre-line">{events?.akad?.location || 'Kediaman Mempelai Wanita, Ds Pagu, Wates, Kediri, Jawa Timur'}</span>
                             </p>
+
                             {events?.akad?.mapUrl && (
                                 <a href={events.akad.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 bg-[color:var(--color-primary)] text-[color:var(--color-text)] px-4 py-2 rounded-full text-[10px] font-bold hover:bg-[color:var(--color-primary)] transition-colors shadow-sm">
                                     <MapPin className="w-3 h-3" />
@@ -710,10 +710,13 @@ export default function Modern02({ data }: { data: InvitationData }) {
                             <hr className="border-slate-400 mb-4" />
                             <p className="text-[10px] text-slate-600 mb-4 font-medium">Pukul : {events?.resepsi?.time || '10.00 WIB - Selesai'}</p>
                             <h4 className="text-[color:var(--color-primary)] text-sm font-bold mb-2">Lokasi Acara</h4>
+
+                            {/* 👇 Bagian Lokasi Ditambahin whitespace-pre-line */}
                             <p className="text-[10px] text-slate-600 mb-6 leading-relaxed">
-                                <span className="font-bold">Tempat : </span>
-                                {events?.resepsi?.location || 'Kediaman Mempelai Wanita, Ds Pagu, Wates, Kediri, Jawa Timur'}
+                                <span className="font-bold block mb-1">Tempat : </span>
+                                <span className="whitespace-pre-line">{events?.resepsi?.location || 'Kediaman Mempelai Wanita, Ds Pagu, Wates, Kediri, Jawa Timur'}</span>
                             </p>
+
                             {events?.resepsi?.mapUrl && (
                                 <a href={events.resepsi.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 bg-[color:var(--color-primary)] text-[color:var(--color-text)] px-4 py-2 rounded-full text-[10px] font-bold hover:bg-[color:var(--color-primary)] transition-colors shadow-sm">
                                     <MapPin className="w-3 h-3" />

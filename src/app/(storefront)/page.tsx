@@ -204,67 +204,45 @@ export default function StorefrontPage() {
         </div>
       </section>
 
-      {/* ================= 3. KATALOG SECTION ================= */}
-      <section id="katalog" className="py-20 px-6 bg-white/60 backdrop-blur-sm border-t border-[#D1E0D7] relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 tracking-tight">Katalog Tema</h2>
-            <p className="text-[#3A4B40]/70 font-medium">Pilih desain yang paling mencerminkan konsep pernikahan lu.</p>
-          </div>
+      {/* ================= 3. KATALOG TEMA SECTION ================= */}
+      <section id="katalog" className="py-20 px-4 md:px-10 max-w-7xl mx-auto z-20 relative">
+        <div className="text-center mb-10 md:mb-12">
+          <h2 className="text-2xl md:text-4xl font-serif font-bold mb-3 md:mb-4 text-[#3A4B40] tracking-tight">Katalog Tema</h2>
+          <p className="text-[#3A4B40]/70 text-xs md:text-base max-w-2xl mx-auto">Pilih desain yang paling pas untuk hari bahagiamu.</p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Grid: 2 kolom di HP, 3 di Tablet, 4 di Desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
 
-            {/* Card: Elegan 01 */}
-            <div className="bg-[#FBFBF9] rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-[#D1E0D7] hover:border-[#8BA896] group">
-              <div className="h-64 bg-[#F0F5F2] relative flex items-center justify-center text-[#3A4B40]/40 font-bold overflow-hidden">
-                Preview Elegan-01
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2">Tema Elegan 01</h3>
-                <p className="text-sm text-[#3A4B40]/70 mb-6 font-medium line-clamp-2">
-                  Desain elegan dan mewah dengan sentuhan tipografi modern minimalis.
-                </p>
-                <div className="flex gap-3">
-                  <Link href="/preview/elegan-01" target="_blank" className="flex-1">
-                    <button className="w-full bg-white border border-[#D1E0D7] text-[#3A4B40] py-3 rounded-xl text-sm font-bold hover:bg-[#F0F5F2] hover:border-[#8BA896] transition-all duration-300 shadow-sm">
-                      Preview
-                    </button>
-                  </Link>
-                  <Link href="/login?template=elegan-01" className="flex-1">
-                    <button className="w-full bg-[#3A4B40] text-[#FBFBF9] py-3 rounded-xl text-sm font-bold hover:bg-[#2C3931] transition-all duration-300 shadow-md hover:-translate-y-0.5">
-                      Buat
-                    </button>
-                  </Link>
-                </div>
-              </div>
-            </div>
+          {[
+            { id: 'elegan-01', nama: 'Tema Elegan 01', kategori: 'Elegan & Minimalis', img: '/mockup-1.jpg' },
+            { id: 'modern-02', nama: 'Tema Modern 02', kategori: 'Modern & Clean', img: '/mockup-modern-02.jpg' },
 
-            {/* Card: Rustic 01 */}
-            <div className="bg-[#FBFBF9] rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-[#D1E0D7] hover:border-[#8BA896] group">
-              <div className="h-64 bg-[#F0F5F2] relative flex items-center justify-center text-[#3A4B40]/40 font-bold overflow-hidden">
-                Preview Rustic-01
+          ].map((tema) => (
+            <div key={tema.id} className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm border border-[#D1E0D7] hover:shadow-lg transition-all group">
+              {/* Thumbnail Gambar (Rasio 3:4) */}
+              <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+                <img
+                  src={tema.img}
+                  alt={tema.nama}
+                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                />
               </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2">Tema Rustic 01</h3>
-                <p className="text-sm text-[#3A4B40]/70 mb-6 font-medium line-clamp-2">
-                  Desain minimalis dengan sentuhan botani alam dan palet warna hangat.
-                </p>
-                <div className="flex gap-3">
-                  <Link href="/preview/rustic-01" target="_blank" className="flex-1">
-                    <button className="w-full bg-white border border-[#D1E0D7] text-[#3A4B40] py-3 rounded-xl text-sm font-bold hover:bg-[#F0F5F2] hover:border-[#8BA896] transition-all duration-300 shadow-sm">
-                      Preview
-                    </button>
-                  </Link>
-                  <Link href="/login?template=rustic-01" className="flex-1">
-                    <button className="w-full bg-[#3A4B40] text-[#FBFBF9] py-3 rounded-xl text-sm font-bold hover:bg-[#2C3931] transition-all duration-300 shadow-md hover:-translate-y-0.5">
-                      Buat
-                    </button>
-                  </Link>
-                </div>
+
+              {/* Detail Card */}
+              <div className="p-3 md:p-5">
+                <h3 className="font-bold text-[#3A4B40] text-[13px] md:text-lg mb-0.5 md:mb-1 truncate">{tema.nama}</h3>
+                <p className="text-[#3A4B40]/60 text-[10px] md:text-xs mb-3 truncate">{tema.kategori}</p>
+                {/* Link menuju folder app/preview/[template] */}
+                <a href={`/preview/${tema.id}`} className="block w-full">
+                  <button className="w-full bg-[#F0F5F2] text-[#3A4B40] text-[11px] md:text-sm font-bold py-2 md:py-2.5 rounded-lg hover:bg-[#8BA896] hover:text-white transition-colors">
+                    Lihat Preview
+                  </button>
+                </a>
               </div>
             </div>
+          ))}
 
-          </div>
         </div>
       </section>
 

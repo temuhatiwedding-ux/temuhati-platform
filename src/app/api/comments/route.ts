@@ -5,16 +5,19 @@ import { createClient } from '@/utils/supabase/server' // Sesuaikan path jika be
 export async function POST(req: Request) {
     try {
         const supabase = await createClient()
-        // Tambahkan guest_count di sini
         const { invitation_id, name, attendance, message, guest_count } = await req.json()
 
         if (!invitation_id || !name || !attendance) {
             return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 })
         }
 
+        // CEGAT PREVIEW: Langsung balikin sukses palsu kalau lagi ngetes di dashboard
+        if (invitation_id === 'preview-mode') {
+            return NextResponse.json({ success: true, message: 'Komentar terkirim (Mode Preview)' })
+        }
+
         const { error } = await supabase
             .from('comments')
-            // Tambahkan guest_count di dalam insert
             .insert([{ invitation_id, name, attendance, message, guest_count }])
 
         if (error) throw error
@@ -34,6 +37,11 @@ export async function GET(req: Request) {
 
         if (!invitation_id) {
             return NextResponse.json({ error: 'ID Undangan tidak valid' }, { status: 400 })
+        }
+
+        // CEGAT PREVIEW: Balikin array kosong, jadi Supabase ga usah di-query
+        if (invitation_id === 'preview-mode') {
+            return NextResponse.json([])
         }
 
         const { data, error } = await supabase
