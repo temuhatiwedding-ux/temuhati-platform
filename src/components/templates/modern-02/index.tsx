@@ -142,14 +142,16 @@ export default function Modern02({ data }: { data: InvitationData }) {
         setIsMounted(true)
     }, [])
 
+    const shortCode = searchParams.get('c')
+
     useEffect(() => {
         const markAsOpened = async () => {
-            if (guestId) {
-                await supabase.from('guest_list').update({ is_opened: true }).eq('id', guestId)
+            if (shortCode) {
+                await supabase.from('guest_list').update({ is_opened: true }).eq('short_code', shortCode)
             }
         }
         markAsOpened()
-    }, [guestId])
+    }, [shortCode])
 
 
 

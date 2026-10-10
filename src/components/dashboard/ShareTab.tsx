@@ -34,6 +34,7 @@ interface Guest {
     selfie_url?: string;
     is_sent: boolean;
     is_checked_in: boolean;
+    short_code?: string;
 }
 
 export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = false }: ShareTabProps) {
@@ -186,9 +187,14 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
 
         const paxValue = Number(newPax) || 1
 
+        // 👉 Generate 5 karakter acak (Contoh: X8K2P)
+        const generateShortCode = () => Math.random().toString(36).substring(2, 7).toUpperCase()
+        const newShortCode = generateShortCode()
+
         const { data, error } = await supabase
             .from('guest_list')
-            .insert([{ slug, name: guestName, whatsapp: newWa.trim(), max_pax: paxValue }])
+            // 👉 Masukkan short_code ke database
+            .insert([{ slug, name: guestName, whatsapp: newWa.trim(), max_pax: paxValue, short_code: newShortCode }])
             .select()
             .single()
 
@@ -215,8 +221,9 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
     }
 
     const getFormattedMessage = (guest: Guest) => {
-        const linkUndangan = `${baseInvitationUrl}?to=${encodeURIComponent(guest.name)}&id=${guest.id}`
-        const linkTiket = `${baseUrl}/tiket/${guest.id}`
+        // 👉 Ganti ?id=... menjadi ?c=...
+        const linkUndangan = `${baseInvitationUrl}?to=${encodeURIComponent(guest.name)}&c=${guest.short_code}`
+        const linkTiket = `${baseUrl}/tiket/${guest.short_code}` // 👉 Boleh sekalian ubah tiket kalau mau pendek juga
 
         let finalMessage = messageTemplate
             .replace(/\[nama_tamu\]/g, guest.name)

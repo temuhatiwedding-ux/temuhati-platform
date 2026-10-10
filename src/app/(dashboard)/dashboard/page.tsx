@@ -49,7 +49,7 @@ export default async function DashboardPage({ searchParams }: any) {
             user_id: targetUserId, // Selalu gunakan targetUserId di sini
             groom_name: groom,
             bride_name: bride,
-            slug: `undanganpernikahan-${slug}-${Date.now().toString().slice(-4)}`,
+            slug: slug,
             template_id: 'rustic-01',
             status: 'DRAFT',
             content_data: {

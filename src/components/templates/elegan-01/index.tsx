@@ -132,17 +132,16 @@ export default function Elegan01({ data }: { data: InvitationData }) {
         return () => observer.disconnect();
     }, []);
 
+    const shortCode = searchParams.get('c')
+
     useEffect(() => {
         const markAsOpened = async () => {
-            if (guestId) {
-                await supabase
-                    .from('guest_list')
-                    .update({ is_opened: true })
-                    .eq('id', guestId)
+            if (shortCode) {
+                await supabase.from('guest_list').update({ is_opened: true }).eq('short_code', shortCode)
             }
         }
         markAsOpened()
-    }, [guestId])
+    }, [shortCode])
 
     const content = data.content_data || {}
 
