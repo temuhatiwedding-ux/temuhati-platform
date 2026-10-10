@@ -131,7 +131,7 @@ export default function ShareTab({ slug, hasQrAddon = false, hasSelfieAddon = fa
                 const { data, error } = await supabase
                     .from('guest_list')
                     .select('*')
-                    .eq('id', scannedId)
+                    .eq('short_code', scannedId)
                     .single()
 
                 if (error || !data || data.is_checked_in) {

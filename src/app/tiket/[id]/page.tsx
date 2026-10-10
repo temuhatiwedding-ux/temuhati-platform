@@ -20,7 +20,8 @@ export default function TicketPage() {
             const { data, error } = await supabase
                 .from('guest_list')
                 .select('*')
-                .eq('id', id)
+                // 👇 UBAH 'id' JADI 'short_code'
+                .eq('short_code', id)
                 .single()
 
             if (data) setGuest(data)
@@ -106,7 +107,8 @@ export default function TicketPage() {
                     <div className="flex flex-col items-center">
                         <div className={`p-4 rounded-2xl bg-white border-2 ${guest.is_checked_in ? 'border-gray-200 opacity-50' : 'border-[#3A4B40]/20 shadow-sm'}`}>
                             <QRCodeSVG
-                                value={`https://temuhatiinvite.com/tiket/${guest.id}`}
+                                // 👇 UBAH guest.id JADI guest.short_code
+                                value={`https://temuhatiinvite.com/tiket/${guest.short_code}`}
                                 size={180}
                                 bgColor={"#ffffff"}
                                 fgColor={"#3A4B40"}
